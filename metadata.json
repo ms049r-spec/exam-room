@@ -1,0 +1,6 @@
+{
+  "name": "Exam Room - Online Practice & Computer-Based Testing Platform",
+  "description": "Clean, standalone online practice exam platform with timed CBT simulations, instant scoring, question review, and performance analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

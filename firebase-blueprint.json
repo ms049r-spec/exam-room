@@ -1,0 +1,209 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Authenticated user profile in Exam Room",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last profile update timestamp"
+        }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Attempt": {
+      "title": "Attempt",
+      "description": "Completed exam result attempt record",
+      "type": "object",
+      "properties": {
+        "examId": {
+          "type": "string",
+          "description": "Identifier of the exam paper"
+        },
+        "examTitle": {
+          "type": "string",
+          "description": "Title of the exam paper"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Exam subject"
+        },
+        "score": {
+          "type": "number",
+          "description": "Calculated raw marks obtained"
+        },
+        "percentage": {
+          "type": "number",
+          "description": "Percentage score"
+        },
+        "correct": {
+          "type": "number",
+          "description": "Count of correctly answered questions"
+        },
+        "wrong": {
+          "type": "number",
+          "description": "Count of incorrectly answered questions"
+        },
+        "unattempted": {
+          "type": "number",
+          "description": "Count of unattempted questions"
+        },
+        "accuracy": {
+          "type": "number",
+          "description": "Accuracy percentage"
+        },
+        "timeTaken": {
+          "type": "number",
+          "description": "Total duration spent in seconds"
+        },
+        "auraPoints": {
+          "type": "number",
+          "description": "Earned Aura Points value"
+        },
+        "completedAt": {
+          "type": "number",
+          "description": "Epoch timestamp of attempt completion"
+        },
+        "answers": {
+          "type": "string",
+          "description": "JSON stringified answer selections"
+        }
+      },
+      "required": ["examId", "score", "percentage", "completedAt"]
+    },
+    "Bookmark": {
+      "title": "Bookmark",
+      "description": "Bookmarked question record",
+      "type": "object",
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "description": "ID of the bookmarked question"
+        },
+        "savedAt": {
+          "type": "number",
+          "description": "Epoch timestamp when bookmarked"
+        }
+      },
+      "required": ["questionId", "savedAt"]
+    },
+    "Mistake": {
+      "title": "Mistake",
+      "description": "Tracked mistake question record",
+      "type": "object",
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "description": "ID of the mistake question"
+        },
+        "examId": {
+          "type": "string",
+          "description": "ID of the exam where the mistake occurred"
+        },
+        "savedAt": {
+          "type": "number",
+          "description": "Epoch timestamp when recorded"
+        },
+        "attempts": {
+          "type": "number",
+          "description": "Cumulative mistake count"
+        }
+      },
+      "required": ["questionId", "savedAt"]
+    },
+    "SavedQuestion": {
+      "title": "SavedQuestion",
+      "description": "Explicitly saved question record",
+      "type": "object",
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "description": "ID of the saved question"
+        },
+        "savedAt": {
+          "type": "number",
+          "description": "Epoch timestamp when saved"
+        }
+      },
+      "required": ["questionId", "savedAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Publicly visible best exam attempt for opted-in users",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "Public display alias"
+        },
+        "bestScore": {
+          "type": "number",
+          "description": "Best raw score obtained"
+        },
+        "maxScore": {
+          "type": "number",
+          "description": "Maximum possible score for the exam"
+        },
+        "bestPercentage": {
+          "type": "number",
+          "description": "Best percentage achieved"
+        },
+        "timeTaken": {
+          "type": "number",
+          "description": "Duration taken in seconds"
+        },
+        "auraPoints": {
+          "type": "number",
+          "description": "Calculated Aura Points"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp of the best attempt"
+        }
+      },
+      "required": ["displayName", "bestScore", "bestPercentage", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document owned by authenticated user"
+    },
+    "/users/{userId}/attempts/{attemptId}": {
+      "schema": "Attempt",
+      "description": "User's completed exam attempt records"
+    },
+    "/users/{userId}/bookmarks/{questionId}": {
+      "schema": "Bookmark",
+      "description": "User's bookmarked questions"
+    },
+    "/users/{userId}/mistakes/{questionId}": {
+      "schema": "Mistake",
+      "description": "User's tracked incorrect questions"
+    },
+    "/users/{userId}/savedQuestions/{questionId}": {
+      "schema": "SavedQuestion",
+      "description": "User's explicitly saved practice questions"
+    },
+    "/leaderboards/{examId}/entries/{userId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Public leaderboard entry for a specific exam"
+    }
+  }
+}
