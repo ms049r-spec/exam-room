@@ -38,19 +38,25 @@ export interface ExamDefinition {
   id: string;
   title: string;
   subject: string;
-  chapter: string;
-  description: string;
+  chapter?: string;
+  description?: string;
   questionCount: number;
-  difficulty: 'Easy' | 'Moderate' | 'Hard' | 'Mixed';
+  difficulty?: 'Easy' | 'Moderate' | 'Hard' | 'Mixed';
   defaultDurationMinutes: number;
+  duration?: number; // Duration in minutes (canonical)
   markingScheme: {
     correct: number;
     incorrect: number;
     unattempted: number;
   };
-  tag: string;
+  tag?: string;
   questions: Question[];
+  published?: boolean;
   featured?: boolean;
+  createdAt?: string | number;
+  updatedAt?: string | number;
+  createdBy?: string;
+  isBuiltIn?: boolean;
 }
 
 export interface ExamConfig {

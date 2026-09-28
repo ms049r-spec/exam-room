@@ -10,8 +10,10 @@ import {
 } from '../lib/auth';
 import {
   autoSyncUserData,
+  syncUserData,
   flushPendingSyncs
 } from '../lib/firestore';
+import { localStore } from '../storage/localStore';
 
 interface AuthContextType {
   user: User | null;
@@ -43,12 +45,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      localStore.setUser(currentUser ? currentUser.uid : null);
       setUser(currentUser);
       setLoading(false);
 
       if (currentUser) {
-        // Automatically and silently sync any local records or pending attempts to Firestore
-        autoSyncUserData(currentUser.uid).catch((err) => {
+        // Automatically and silently sync user's cloud records to their scoped local namespace
+        syncUserData(currentUser.uid).catch((err) => {
           console.warn('Background initial cloud sync deferred:', err);
         });
       }
@@ -83,23 +86,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, pass: string) => {
     const signedInUser = await signInWithEmail(email, pass);
     closeAuthModal();
-    // Auto-sync immediately
     if (signedInUser) {
-      autoSyncUserData(signedInUser.uid).catch(() => {});
+      localStore.setUser(signedInUser.uid);
+      syncUserData(signedInUser.uid).catch(() => {});
     }
   };
 
   const signUp = async (email: string, pass: string, name?: string, leaderboardOptIn: boolean = false) => {
     const signedUpUser = await signUpWithEmail(email, pass, name, leaderboardOptIn);
     closeAuthModal();
-    // Auto-sync immediately
     if (signedUpUser) {
-      autoSyncUserData(signedUpUser.uid).catch(() => {});
+      localStore.setUser(signedUpUser.uid);
+      syncUserData(signedUpUser.uid).catch(() => {});
     }
   };
 
   const signOut = async () => {
+    localStore.clearActiveSession();
     await signOutUser();
+    localStore.setUser(null);
   };
 
   const resetPassword = async (email: string) => {

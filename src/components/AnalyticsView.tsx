@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { localStore } from '../storage/localStore';
+import React from 'react';
+import { useUserData } from '../context/UserDataContext';
 import { Target, Award, CheckCircle2, ArrowRight } from 'lucide-react';
 import { ExamResult } from '../types/exam';
 
@@ -12,11 +12,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   onReviewAttempt,
   onGoToExams
 }) => {
-  const [stats, setStats] = useState(() => localStore.getAnalytics());
-
-  useEffect(() => {
-    setStats(localStore.getAnalytics());
-  }, []);
+  const { stats, loading } = useUserData();
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -42,7 +38,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
         <button
           onClick={onGoToExams}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-white bg-slate-900 hover:bg-slate-800 rounded transition-colors self-start sm:self-auto shadow-xs shrink-0 cursor-pointer"
+          className="liquid-glass-btn-primary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-mono font-bold text-white rounded-xl transition-all self-start sm:self-auto shadow-sm shrink-0 cursor-pointer"
         >
           <span>TAKE EXAM</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -67,11 +63,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         <>
           {/* Top Metric Cards: 2 cols on mobile/tablet, 4 cols on desktop */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-            <div className="bg-white p-3.5 sm:p-4 rounded-lg border border-slate-200 cbt-shadow">
+            <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
               <span className="text-[10px] font-mono font-bold uppercase text-slate-500 block mb-1">
                 TOTAL SESSIONS
               </span>
-              <div className="text-xl sm:text-3xl font-mono font-bold text-slate-900">
+              <div className="text-xl sm:text-3xl font-mono font-bold text-slate-900 tabular-nums">
                 {stats.totalAttempts}
               </div>
               <div className="text-[10px] font-mono text-slate-500 mt-0.5">
@@ -79,11 +75,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-white p-3.5 sm:p-4 rounded-lg border border-slate-200 cbt-shadow">
+            <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
               <span className="text-[10px] font-mono font-bold uppercase text-emerald-800 block mb-1">
                 AVERAGE SCORE
               </span>
-              <div className="text-xl sm:text-3xl font-mono font-bold text-slate-900">
+              <div className="text-xl sm:text-3xl font-mono font-bold text-slate-900 tabular-nums">
                 {stats.averageScorePercent}%
               </div>
               <div className="text-[10px] font-mono text-slate-500 mt-0.5">
@@ -91,11 +87,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-white p-3.5 sm:p-4 rounded-lg border border-slate-200 cbt-shadow">
+            <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
               <span className="text-[10px] font-mono font-bold uppercase text-indigo-700 block mb-1">
                 PERSONAL BEST
               </span>
-              <div className="text-xl sm:text-3xl font-mono font-bold text-indigo-700">
+              <div className="text-xl sm:text-3xl font-mono font-bold text-indigo-700 tabular-nums">
                 {stats.bestScorePercent}%
               </div>
               <div className="text-[10px] font-mono text-slate-500 mt-0.5">
@@ -103,11 +99,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-white p-3.5 sm:p-4 rounded-lg border border-slate-200 cbt-shadow">
+            <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
               <span className="text-[10px] font-mono font-bold uppercase text-slate-600 block mb-1">
                 OVERALL ACCURACY
               </span>
-              <div className="text-xl sm:text-3xl font-mono font-bold text-slate-900">
+              <div className="text-xl sm:text-3xl font-mono font-bold text-slate-900 tabular-nums">
                 {stats.averageAccuracy}%
               </div>
               <div className="text-[10px] font-mono text-slate-500 mt-0.5">
@@ -118,8 +114,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
           {/* Subject & Chapter Breakdown Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-            <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 cbt-shadow space-y-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 block pb-2 border-b border-slate-100">
+            <div className="liquid-glass-panel rounded-2xl border border-white/80 p-5 sm:p-6 shadow-sm space-y-3.5">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 block pb-2 border-b border-slate-200/70">
                 SUBJECT MASTERY
               </span>
               <div className="space-y-2.5">
@@ -129,9 +125,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                       <span className="font-bold text-slate-900 uppercase">{subj}</span>
                       <span className="text-slate-600">{data.attempts} attempts · {data.avgPercentage}% avg</span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-200/60 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-indigo-600 rounded-full"
+                        className="h-full bg-indigo-600 rounded-full transition-all duration-500"
                         style={{ width: `${data.avgPercentage}%` }}
                       />
                     </div>
@@ -140,8 +136,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 cbt-shadow space-y-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 block pb-2 border-b border-slate-100">
+            <div className="liquid-glass-panel rounded-2xl border border-white/80 p-5 sm:p-6 shadow-sm space-y-3.5">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 block pb-2 border-b border-slate-200/70">
                 CHAPTER ACCURACY
               </span>
               <div className="space-y-2.5">
@@ -151,9 +147,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                       <span className="font-bold text-slate-900 truncate max-w-xs">{chap}</span>
                       <span className="text-slate-600">Acc: {data.accuracy}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-200/60 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-emerald-600 rounded-full"
+                        className="h-full bg-emerald-600 rounded-full transition-all duration-500"
                         style={{ width: `${data.accuracy}%` }}
                       />
                     </div>
@@ -164,7 +160,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </div>
 
           {/* Test Paper Attempt History */}
-          <div className="bg-white rounded-lg border border-slate-200 p-4 sm:p-5 cbt-shadow space-y-3 w-full">
+          <div className="liquid-glass-panel rounded-2xl border border-white/80 p-5 sm:p-6 shadow-sm space-y-4 w-full">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 block pb-2 border-b border-slate-100">
               RECENT EXAM ATTEMPTS
             </span>

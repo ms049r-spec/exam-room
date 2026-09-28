@@ -5,6 +5,7 @@ import { QuestionPalette } from './QuestionPalette';
 import { SubmitConfirmModal } from './SubmitConfirmModal';
 import { calculateExamResult } from '../utils/examEngine';
 import { localStore } from '../storage/localStore';
+import { useUserData } from '../context/UserDataContext';
 
 interface ExamEngineProps {
   initialSession: ActiveExamSession;
@@ -22,7 +23,8 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
   const [answers, setAnswers] = useState<Record<string, number | number[]>>(session.answers || {});
   const [markedForReview, setMarkedForReview] = useState<Record<string, boolean>>(session.markedForReview || {});
   const [showSubmitModal, setShowSubmitModal] = useState(false);
-  const [bookmarkedMap, setBookmarkedMap] = useState<Record<string, boolean>>({});
+
+  const { isBookmarked, toggleBookmark } = useUserData();
 
   // Countdown timer
   const [secondsRemaining, setSecondsRemaining] = useState<number>(() => {
@@ -35,14 +37,6 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(() => {
     return Math.max(0, Math.round((Date.now() - session.startedAt) / 1000));
   });
-
-  // Track bookmarks on mount
-  useEffect(() => {
-    const bookmarks = localStore.getBookmarks();
-    const map: Record<string, boolean> = {};
-    bookmarks.forEach((id) => (map[id] = true));
-    setBookmarkedMap(map);
-  }, []);
 
   // Save session state to localStorage
   useEffect(() => {
@@ -104,12 +98,8 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
     }));
   };
 
-  const handleToggleBookmark = (questionId: string) => {
-    const isNowBookmarked = localStore.toggleBookmark(questionId);
-    setBookmarkedMap((prev) => ({
-      ...prev,
-      [questionId]: isNowBookmarked
-    }));
+  const handleToggleBookmark = async (questionId: string) => {
+    await toggleBookmark(questionId);
   };
 
   const handleNext = () => {
@@ -136,7 +126,6 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
       markedForReview
     };
     const result = calculateExamResult(currentSessionState, Date.now());
-    localStore.saveResult(result);
     onFinishExam(result);
   };
 
@@ -165,40 +154,47 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
   const examCode = (session.subject.slice(0, 3) + '-01').toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans w-full">
-      {/* 1. BAND ONE: HEADER */}
-      <header className="border-b border-[#D9D9D9] bg-[#FAFAFA] px-3 sm:px-6 py-2.5 sm:py-3 sticky top-0 z-30 w-full">
-        <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-4 font-mono text-xs w-full">
+    <div className="min-h-screen liquid-glass-ambient text-slate-900 flex flex-col font-sans w-full">
+      {/* 1. BAND ONE: LIQUID GLASS HEADER */}
+      <header className="liquid-glass-dark text-white px-2.5 sm:px-6 py-2.5 sm:py-3 sticky top-0 z-30 w-full border-b border-white/10 shadow-lg">
+        <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 font-mono text-xs w-full min-w-0">
           {/* Logo & Paper Details */}
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-            <span className="font-bold tracking-widest text-[#0A0A0A] uppercase shrink-0 text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#22223B] border border-[#C9ADA7]/40 flex items-center justify-center font-bold text-[#F2E9E4] text-[10px] sm:text-xs shadow-xs shrink-0">
+              CBT
+            </div>
+            <span className="font-bold tracking-tight text-white uppercase shrink-0 text-xs sm:text-sm">
               EXAM ROOM
             </span>
-            <span className="text-[#D9D9D9] hidden sm:inline">|</span>
-            <span className="font-bold text-[#0A0A0A] uppercase truncate text-[11px] sm:text-xs">
-              {examCode} / {session.examTitle}
+            <span className="text-white/20 hidden sm:inline" aria-hidden="true">·</span>
+            <span className="font-medium text-slate-200 uppercase truncate text-[10px] sm:text-xs max-w-[110px] sm:max-w-xs md:max-w-md">
+              {examCode} · {session.examTitle}
             </span>
           </div>
 
           {/* Question Index, Timer, Submit */}
-          <div className="flex items-center gap-3 sm:gap-6 shrink-0 ml-auto">
-            <span className="hidden md:inline text-[#555555]">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-auto">
+            <span className="hidden md:inline text-slate-300 text-[11px] bg-white/6 px-2.5 py-1 rounded-lg border border-white/10 tabular-nums">
               Q {padNum(currentIndex + 1)} / {padNum(session.questions.length)}
             </span>
 
-            {/* Timer */}
-            <div className="font-bold tracking-wider text-[#0A0A0A] text-xs sm:text-sm">
+            {/* Timer Badge */}
+            <div className={`font-mono text-xs sm:text-sm font-bold px-2.5 sm:px-3 py-1 rounded-xl border tabular-nums ${
+              session.timeMode === 'timed' && secondsRemaining <= 300
+                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse'
+                : 'bg-white/8 text-white border-white/15'
+            }`}>
               {session.timeMode === 'timed' ? (
-                <span>T-MINUS {formatTime(secondsRemaining)}</span>
+                <span>{formatTime(secondsRemaining)}</span>
               ) : (
-                <span>ELAPSED {formatTime(elapsedSeconds)}</span>
+                <span>{formatTime(elapsedSeconds)}</span>
               )}
             </div>
 
             {/* Submit */}
             <button
               onClick={() => setShowSubmitModal(true)}
-              className="bg-[#0047FF] hover:bg-[#0037c7] text-white px-3 sm:px-4 py-1 sm:py-1.5 font-bold uppercase tracking-wider transition-colors cursor-pointer text-xs"
+              className="liquid-glass-btn-primary px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer shadow-2xs"
             >
               SUBMIT
             </button>
@@ -206,16 +202,16 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
             {/* Exit */}
             <button
               onClick={onQuitExam}
-              className="text-[#555555] hover:text-[#0A0A0A] uppercase tracking-wider underline cursor-pointer text-xs"
+              className="text-slate-400 hover:text-white px-1.5 sm:px-2 py-1 text-xs font-mono transition-colors cursor-pointer"
             >
-              [EXIT]
+              Exit
             </button>
           </div>
         </div>
       </header>
 
       {/* 2. BAND TWO: QUESTION AREA */}
-      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-8 flex-1 flex flex-col">
+      <main className="max-w-7xl mx-auto w-full px-2.5 sm:px-6 py-4 sm:py-8 flex-1 flex flex-col min-w-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start flex-1 w-full">
           {/* Main Question Stage (8 cols) */}
           <div className="lg:col-span-8 space-y-6 w-full">
@@ -226,35 +222,35 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
                 totalQuestions={session.questions.length}
                 userAnswer={answers[currentQuestion.id]}
                 onSelectAnswer={handleSelectAnswer}
-                isBookmarked={!!bookmarkedMap[currentQuestion.id]}
+                isBookmarked={isBookmarked(currentQuestion.id)}
                 onToggleBookmark={() => handleToggleBookmark(currentQuestion.id)}
               />
             )}
 
             {/* In-Between Action Bar */}
-            <div className="pt-4 border-t border-[#D9D9D9] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 font-mono text-xs w-full">
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 font-mono text-xs w-full">
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <button
                   type="button"
                   onClick={handleToggleMarkForReview}
-                  className={`px-3 sm:px-4 py-2 border font-bold uppercase transition-colors cursor-pointer flex-1 sm:flex-initial text-center ${
+                  className={`px-4 py-2.5 rounded-xl font-bold uppercase transition-all cursor-pointer flex-1 sm:flex-initial text-center shadow-2xs ${
                     currentQuestion && markedForReview[currentQuestion.id]
-                      ? 'bg-amber-400 text-[#0A0A0A] border-amber-500'
-                      : 'bg-white text-[#0A0A0A] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                      ? 'bg-amber-400 text-amber-950 border border-amber-500/80 shadow-xs'
+                      : 'liquid-glass-btn-secondary text-slate-800'
                   }`}
                 >
                   {currentQuestion && markedForReview[currentQuestion.id]
-                    ? '[★ MARKED FOR REVIEW]'
-                    : '[ MARK FOR REVIEW ]'}
+                    ? '★ Marked for Review'
+                    : 'Mark for Review'}
                 </button>
 
                 <button
                   type="button"
                   onClick={handleClearResponse}
                   disabled={!currentQuestion || answers[currentQuestion.id] === undefined}
-                  className="px-3 sm:px-4 py-2 border border-[#D9D9D9] bg-white text-[#555555] hover:text-[#0A0A0A] hover:border-[#0A0A0A] disabled:opacity-25 disabled:cursor-not-allowed uppercase font-bold transition-colors cursor-pointer"
+                  className="liquid-glass-btn-secondary px-3.5 py-2.5 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed uppercase font-bold cursor-pointer"
                 >
-                  [ CLEAR ]
+                  Clear Choice
                 </button>
               </div>
 
@@ -263,18 +259,18 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
                   type="button"
                   onClick={handlePrev}
                   disabled={currentIndex === 0}
-                  className="flex-1 sm:flex-initial px-4 sm:px-5 py-2 border border-[#D9D9D9] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] disabled:opacity-25 disabled:cursor-not-allowed uppercase font-bold transition-colors cursor-pointer text-center"
+                  className="liquid-glass-btn-secondary flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed uppercase font-bold cursor-pointer text-center"
                 >
-                  [← PREVIOUS]
+                  Previous
                 </button>
 
                 <button
                   type="button"
                   onClick={handleNext}
                   disabled={currentIndex === session.questions.length - 1}
-                  className="flex-1 sm:flex-initial px-5 sm:px-6 py-2 bg-[#0A0A0A] hover:bg-[#0047FF] text-white disabled:opacity-25 disabled:cursor-not-allowed uppercase font-bold transition-colors cursor-pointer text-center"
+                  className="liquid-glass-btn-primary flex-1 sm:flex-initial px-5 sm:px-6 py-2.5 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed uppercase font-bold cursor-pointer text-center"
                 >
-                  [NEXT →]
+                  Next
                 </button>
               </div>
             </div>
@@ -294,7 +290,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
         </div>
 
         {/* Mobile / Tablet Question Palette Inline Strip */}
-        <div className="lg:hidden mt-8 pt-6 border-t border-[#D9D9D9] w-full">
+        <div className="lg:hidden mt-8 pt-6 border-t border-slate-200/80 w-full">
           <QuestionPalette
             questions={session.questions}
             currentIndex={currentIndex}

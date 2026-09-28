@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { localStore } from '../storage/localStore';
+import React, { useState } from 'react';
+import { useUserData } from '../context/UserDataContext';
 import { MistakeEntry, Question } from '../types/exam';
 import { Play, CheckCircle2, Trash2 } from 'lucide-react';
 
@@ -12,15 +12,11 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
   onStartMistakeExam,
   onGoToExams
 }) => {
-  const [mistakes, setMistakes] = useState<Record<string, MistakeEntry>>({});
+  const { mistakes, mistakesList, clearMistakes } = useUserData();
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [revealedExplanations, setRevealedExplanations] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    setMistakes(localStore.getMistakes());
-  }, []);
-
-  const mistakeList = Object.values(mistakes);
+  const mistakeList = mistakesList;
   const subjects = ['all', ...Array.from(new Set(mistakeList.map((m) => m.question.subject)))];
 
   const filteredMistakes = mistakeList.filter((m) => {
@@ -35,10 +31,9 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
     }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (window.confirm('Clear all recorded mistakes?')) {
-      localStore.clearMistakes();
-      setMistakes({});
+      await clearMistakes();
     }
   };
 
@@ -71,14 +66,14 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
           <div className="flex items-center gap-2 self-start sm:self-auto font-mono text-xs flex-wrap">
             <button
               onClick={handleClearAll}
-              className="px-3 py-1.5 text-slate-500 hover:text-rose-600 bg-white border border-slate-300 rounded flex items-center gap-1.5 cursor-pointer"
+              className="liquid-glass-btn-secondary px-3 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer text-slate-600 hover:text-rose-600"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>CLEAR</span>
             </button>
             <button
               onClick={handleStartPractice}
-              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 font-bold uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 rounded transition-colors shadow-xs cursor-pointer"
+              className="liquid-glass-btn-primary flex items-center gap-1.5 px-4 py-2 font-bold uppercase tracking-wider rounded-xl cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>PRACTICE MISTAKES ({filteredMistakes.length})</span>
@@ -88,31 +83,31 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
       </div>
 
       {mistakeList.length === 0 ? (
-        <div className="bg-white rounded-lg border border-slate-200 p-6 sm:p-8 text-center max-w-md mx-auto space-y-3 cbt-shadow">
-          <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900">No Mistakes Recorded</h3>
-          <p className="text-xs text-slate-500 font-sans">
+        <div className="liquid-glass-panel rounded-2xl border border-white/80 p-8 sm:p-12 text-center max-w-md mx-auto space-y-3.5 shadow-sm">
+          <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+          <h3 className="text-base sm:text-lg font-bold text-slate-900">No Mistakes Recorded</h3>
+          <p className="text-xs text-slate-500 font-sans leading-relaxed">
             Any questions you miss during tests will automatically be logged here for remediation drills.
           </p>
           <button
             onClick={onGoToExams}
-            className="px-4 py-2 text-xs font-mono font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-xs cursor-pointer"
+            className="liquid-glass-btn-primary px-5 py-2.5 text-xs font-mono font-bold rounded-xl cursor-pointer"
           >
-            TAKE AN EXAM
+            START PRACTICE PAPER
           </button>
         </div>
       ) : (
         <div className="space-y-4 w-full">
           {/* Subjects Filter Bar */}
           {subjects.length > 2 && (
-            <div className="flex flex-wrap items-center gap-1 bg-slate-200/80 p-1 rounded font-mono text-xs w-fit max-w-full">
+            <div className="flex flex-wrap items-center gap-1 bg-slate-200/60 p-1 rounded-xl border border-slate-300/60 font-mono text-xs w-fit max-w-full">
               {subjects.map((subj) => (
                 <button
                   key={subj}
                   onClick={() => setSelectedSubject(subj)}
-                  className={`px-2.5 py-1 rounded font-bold uppercase transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg font-bold uppercase transition-all cursor-pointer ${
                     selectedSubject === subj
-                      ? 'bg-white text-slate-900 shadow-2xs'
+                      ? 'bg-white text-slate-900 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -123,7 +118,7 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
           )}
 
           {/* List of Missed Questions */}
-          <div className="space-y-3 w-full">
+          <div className="space-y-3.5 w-full">
             {filteredMistakes.map((entry) => {
               const q = entry.question;
               const isRevealed = !!revealedExplanations[q.id];
@@ -132,7 +127,7 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
               return (
                 <div
                   key={q.id}
-                  className="bg-white rounded-lg border border-slate-200 p-4 sm:p-5 cbt-shadow space-y-3 w-full"
+                  className="liquid-glass-panel rounded-2xl border border-white/80 p-5 sm:p-6 shadow-sm space-y-3.5 w-full"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">

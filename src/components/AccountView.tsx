@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import {
-  getUserAttemptsFromFirestore,
-  getUserBookmarksFromFirestore,
-  getUserMistakesFromFirestore,
-  autoSyncUserData
-} from '../lib/firestore';
+import { useUserData } from '../context/UserDataContext';
 import {
   getUserLeaderboardSettings,
   updateLeaderboardSettings
@@ -37,10 +32,11 @@ export const AccountView: React.FC<AccountViewProps> = ({
   onNavigate
 }) => {
   const { user, signOut, updateDisplayName } = useAuth();
+  const { attempts, bookmarks, mistakesList, loading: dataLoading } = useUserData();
 
-  const [attempts, setAttempts] = useState<ExamResult[]>([]);
-  const [bookmarksCount, setBookmarksCount] = useState<number>(0);
-  const [mistakesCount, setMistakesCount] = useState<number>(0);
+  const bookmarksCount = bookmarks.length;
+  const mistakesCount = mistakesList.length;
+
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
@@ -56,28 +52,17 @@ export const AccountView: React.FC<AccountViewProps> = ({
   const [settingsSavedMsg, setSettingsSavedMsg] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
 
-  const fetchUserData = async (isManualRefresh = false) => {
+  const fetchUserSettings = async (isManualRefresh = false) => {
     if (!user) return;
     if (isManualRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
-      // Auto sync pending records in background
-      await autoSyncUserData(user.uid);
-
-      const [cloudAttempts, cloudBookmarks, cloudMistakes, lbSettings] = await Promise.all([
-        getUserAttemptsFromFirestore(user.uid),
-        getUserBookmarksFromFirestore(user.uid),
-        getUserMistakesFromFirestore(user.uid),
-        getUserLeaderboardSettings(user.uid)
-      ]);
-      setAttempts(cloudAttempts);
-      setBookmarksCount(cloudBookmarks.length);
-      setMistakesCount(Object.keys(cloudMistakes).length);
+      const lbSettings = await getUserLeaderboardSettings(user.uid);
       setLeaderboardOptIn(lbSettings.leaderboardOptIn);
       setNameInput(user.displayName || user.email?.split('@')[0] || '');
     } catch (err) {
-      console.error('Error fetching account data:', err);
+      console.error('Error fetching leaderboard settings:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -85,7 +70,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
   };
 
   useEffect(() => {
-    fetchUserData();
+    fetchUserSettings();
   }, [user]);
 
   const handleSaveDisplayName = async () => {
@@ -166,14 +151,14 @@ export const AccountView: React.FC<AccountViewProps> = ({
   return (
     <div className="max-w-6xl w-full mx-auto px-3 sm:px-6 py-6 sm:py-8 pb-16 space-y-6">
       {/* Account Profile Header */}
-      <div className="bg-slate-900 text-white rounded-xl border border-slate-800 p-4 sm:p-6 shadow-xs relative overflow-hidden w-full">
+      <div className="liquid-glass-dark text-white rounded-2xl border border-white/15 p-5 sm:p-7 shadow-lg relative overflow-hidden w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-indigo-400 font-mono text-lg sm:text-xl font-bold uppercase shadow-2xs shrink-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-[#C9ADA7] font-mono text-lg sm:text-xl font-bold uppercase shadow-inner shrink-0 backdrop-blur-xs">
               {currentDisplayName.slice(0, 2).toUpperCase()}
             </div>
             <div className="space-y-1 min-w-0 flex-1">
-              <div className="text-[10px] font-mono tracking-widest text-indigo-400 uppercase font-bold">
+              <div className="text-[10px] font-mono tracking-widest text-[#C9ADA7] uppercase font-bold">
                 PROFILE
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -185,13 +170,13 @@ export const AccountView: React.FC<AccountViewProps> = ({
                       onChange={(e) => setNameInput(e.target.value)}
                       maxLength={24}
                       placeholder="Display Name"
-                      className="px-2.5 py-1 text-xs sm:text-sm font-bold bg-slate-800 border border-indigo-500/50 rounded text-white focus:outline-none focus:ring-1 focus:ring-indigo-400 max-w-[160px] sm:max-w-xs"
+                      className="px-2.5 py-1 text-xs sm:text-sm font-bold bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-[#C9ADA7] max-w-[160px] sm:max-w-xs"
                       autoFocus
                     />
                     <button
                       onClick={handleSaveDisplayName}
                       disabled={nameSaving}
-                      className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-1.5 bg-[#4A4E69] hover:bg-[#22223B] text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                       title="Save"
                     >
                       <Check className="w-3.5 h-3.5" />
@@ -202,7 +187,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
                         setNameInput(currentDisplayName);
                         setNameError(null);
                       }}
-                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition-colors cursor-pointer"
+                      className="p-1.5 bg-white/10 hover:bg-white/20 text-slate-300 rounded-lg transition-colors cursor-pointer"
                       title="Cancel"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -218,7 +203,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
                         setNameInput(currentDisplayName);
                         setIsEditingName(true);
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-mono text-slate-300 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-colors cursor-pointer shrink-0"
                     >
                       <Edit2 className="w-3 h-3" />
                       <span>Edit</span>
@@ -226,7 +211,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
                   </>
                 )}
 
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold uppercase shrink-0">
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold uppercase shrink-0">
                   <Cloud className="w-3 h-3" />
                   Synced
                 </span>
@@ -236,14 +221,14 @@ export const AccountView: React.FC<AccountViewProps> = ({
                 <p className="text-[11px] font-mono text-rose-400">{nameError}</p>
               )}
 
-              <p className="text-xs font-mono text-slate-400 truncate max-w-full">{user.email}</p>
+              <p className="text-xs font-mono text-slate-300/80 truncate max-w-full">{user.email}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+          <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0 flex-wrap">
             <button
               onClick={() => signOut()}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 text-xs font-mono font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-md transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 text-xs font-mono font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign Out</span>
@@ -254,41 +239,41 @@ export const AccountView: React.FC<AccountViewProps> = ({
 
       {/* Quick Stats Grid: 2 cols on mobile/tablet, 4 cols on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
           <div className="text-[10px] font-mono uppercase text-slate-500 font-bold mb-1">
             Saved Attempts
           </div>
-          <div className="text-xl sm:text-2xl font-mono font-extrabold text-slate-900">
+          <div className="text-xl sm:text-2xl font-mono font-extrabold text-slate-900 tabular-nums">
             {attempts.length}
           </div>
           <div className="text-[10px] sm:text-[11px] font-mono text-slate-400 mt-1">Saved to your account</div>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
           <div className="text-[10px] font-mono uppercase text-slate-500 font-bold mb-1">
             Best Score
           </div>
-          <div className="text-xl sm:text-2xl font-mono font-extrabold text-indigo-600">
+          <div className="text-xl sm:text-2xl font-mono font-extrabold text-indigo-600 tabular-nums">
             {bestScore}%
           </div>
           <div className="text-[10px] sm:text-[11px] font-mono text-slate-400 mt-1">Highest percentage</div>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
           <div className="text-[10px] font-mono uppercase text-slate-500 font-bold mb-1">
             Average Score
           </div>
-          <div className="text-xl sm:text-2xl font-mono font-extrabold text-slate-900">
+          <div className="text-xl sm:text-2xl font-mono font-extrabold text-slate-900 tabular-nums">
             {averagePercentage}%
           </div>
           <div className="text-[10px] sm:text-[11px] font-mono text-slate-400 mt-1">Across all papers</div>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="liquid-glass-panel rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm">
           <div className="text-[10px] font-mono uppercase text-slate-500 font-bold mb-1">
             Tracked Mistakes
           </div>
-          <div className="text-xl sm:text-2xl font-mono font-extrabold text-rose-600">
+          <div className="text-xl sm:text-2xl font-mono font-extrabold text-rose-600 tabular-nums">
             {mistakesCount}
           </div>
           <div className="text-[10px] sm:text-[11px] font-mono text-slate-400 mt-1">In revision queue</div>
@@ -296,7 +281,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
       </div>
 
       {/* Clean Leaderboard Settings Card */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-2xs space-y-4 w-full">
+      <div className="liquid-glass-panel rounded-2xl border border-white/80 p-5 sm:p-6 shadow-sm space-y-4 w-full">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
@@ -353,29 +338,29 @@ export const AccountView: React.FC<AccountViewProps> = ({
       </div>
 
       {/* Navigation Quick Links */}
-      <div className="flex flex-wrap gap-2 text-xs font-mono w-full">
+      <div className="flex flex-wrap gap-2.5 text-xs font-mono w-full">
         <button
           onClick={() => onNavigate('analytics')}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-md shadow-2xs cursor-pointer"
+          className="liquid-glass-btn-secondary px-4 py-2 font-semibold rounded-xl cursor-pointer"
         >
           View Full Analytics →
         </button>
         <button
           onClick={() => onNavigate('mistakes')}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-md shadow-2xs cursor-pointer"
+          className="liquid-glass-btn-secondary px-4 py-2 font-semibold rounded-xl cursor-pointer"
         >
           Mistakes Pool ({mistakesCount}) →
         </button>
         <button
           onClick={() => onNavigate('saved')}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-md shadow-2xs cursor-pointer"
+          className="liquid-glass-btn-secondary px-4 py-2 font-semibold rounded-xl cursor-pointer"
         >
           Saved Questions ({bookmarksCount}) →
         </button>
       </div>
 
       {/* Exam Attempts List Card */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs w-full">
+      <div className="liquid-glass-panel rounded-2xl border border-white/80 overflow-hidden shadow-sm w-full">
         <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-indigo-600" />
@@ -385,7 +370,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => fetchUserData(true)}
+              onClick={() => fetchUserSettings(true)}
               disabled={refreshing}
               className="text-xs font-mono text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer disabled:opacity-50"
             >
@@ -395,7 +380,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
           </div>
         </div>
 
-        {loading ? (
+        {loading || dataLoading ? (
           <div className="py-12 text-center text-xs font-mono text-slate-400">
             Loading exam records...
           </div>

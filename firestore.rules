@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for user ownership
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,7 +10,7 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // User profile document and all user subcollections: strictly restricted to owning user
+    // User profile document and all user subcollections (attempts, bookmarks, mistakes, savedQuestions)
     match /users/{userId} {
       allow read, write: if isOwner(userId);
 
@@ -20,20 +19,25 @@ service cloud.firestore {
       }
     }
 
-    // Public leaderboards: public read, write restricted to owning user UID
+    // Public leaderboards
     match /leaderboards/{examId} {
       allow read: if true;
+
+      match /entries/{userId} {
+        allow read: if true;
+        allow write: if isOwner(userId);
+      }
     }
 
-    match /leaderboards/{examId}/entries/{userId} {
+    // Exams collection: strictly read-only for public access, all client writes disabled
+    match /exams/{examId} {
       allow read: if true;
-      allow create, update, delete: if isOwner(userId);
-    }
+      allow write: if false;
 
-    // Fallback deny all other documents
-    match /{document=**} {
-      allow read, write: if false;
+      match /{allSubcollections=**} {
+        allow read: if true;
+        allow write: if false;
+      }
     }
   }
 }
-

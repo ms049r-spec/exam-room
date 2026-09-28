@@ -178,6 +178,62 @@
         }
       },
       "required": ["displayName", "bestScore", "bestPercentage", "updatedAt"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Admin managed standardized examination paper",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Exam title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Exam description"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject category"
+        },
+        "chapter": {
+          "type": "string",
+          "description": "Chapter category"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duration in minutes"
+        },
+        "defaultDurationMinutes": {
+          "type": "number",
+          "description": "Default duration in minutes"
+        },
+        "questionCount": {
+          "type": "number",
+          "description": "Total questions count"
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Whether exam is published"
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether exam is featured"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO date creation time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO date update time"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Author user ID"
+        }
+      },
+      "required": ["title", "questionCount", "published"]
     }
   },
   "firestore": {
@@ -204,6 +260,10 @@
     "/leaderboards/{examId}/entries/{userId}": {
       "schema": "LeaderboardEntry",
       "description": "Public leaderboard entry for a specific exam"
+    },
+    "/exams/{examId}": {
+      "schema": "Exam",
+      "description": "Admin managed standardized examination papers"
     }
   }
 }

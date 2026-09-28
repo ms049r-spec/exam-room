@@ -1,5 +1,6 @@
 import React from 'react';
 import { Question } from '../types/exam';
+import { ArrowRight, CheckCircle2, Bookmark, HelpCircle, Sparkles } from 'lucide-react';
 
 interface QuestionPaletteProps {
   questions: Question[];
@@ -36,52 +37,72 @@ export const QuestionPalette: React.FC<QuestionPaletteProps> = ({
     const isAnswered = ans !== undefined && (Array.isArray(ans) ? ans.length > 0 : true);
     const isMarked = !!markedForReview[question.id];
 
-    let base = 'font-mono text-xs font-bold h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center transition-colors cursor-pointer border ';
+    let base = 'font-mono text-xs font-bold h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center transition-all duration-150 cursor-pointer ';
 
     if (isCurrent) {
-      return base + 'bg-[#0047FF] text-white border-[#0047FF] outline-2 outline-offset-1 outline-[#0047FF] z-10';
+      return (
+        base +
+        'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400 ring-offset-2 ring-offset-white z-10 scale-105'
+      );
     }
     if (isMarked) {
-      return base + 'bg-amber-400 text-[#0A0A0A] border-amber-500';
+      return (
+        base +
+        'bg-amber-400/90 hover:bg-amber-400 text-amber-950 border border-amber-500/50 shadow-2xs'
+      );
     }
     if (isAnswered) {
-      return base + 'bg-[#0A0A0A] text-white border-[#0A0A0A]';
+      return (
+        base +
+        'bg-slate-900 hover:bg-slate-800 text-white border border-slate-800 shadow-2xs'
+      );
     }
     // UNANSWERED
-    return base + 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A] hover:text-[#0A0A0A]';
+    return (
+      base +
+      'bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 shadow-2xs'
+    );
   };
 
   return (
-    <div className="border border-[#D9D9D9] bg-white p-4 space-y-4">
+    <div className="liquid-glass-panel rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm border border-white/80">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#D9D9D9] pb-2 font-mono text-xs">
-        <span className="font-bold text-[#0A0A0A] uppercase tracking-wider">
-          PALETTE // {padNum(answeredCount)} OF {padNum(questions.length)} ATTEMPTED
+      <div className="flex items-center justify-between border-b border-slate-200/70 pb-3 font-mono text-xs">
+        <div>
+          <span className="font-bold text-slate-900 uppercase tracking-wider block">
+            Question Palette
+          </span>
+          <span className="text-[11px] text-slate-500">
+            {answeredCount} of {questions.length} attempted
+          </span>
+        </div>
+        <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 font-semibold text-[11px] border border-indigo-200/60 tabular-nums">
+          {Math.round((answeredCount / (questions.length || 1)) * 100)}%
         </span>
       </div>
 
       {/* States Legend */}
-      <div className="grid grid-cols-2 gap-2 font-mono text-[11px] text-[#555555] border-b border-[#D9D9D9] pb-3">
+      <div className="grid grid-cols-2 gap-2 font-mono text-[11px] text-slate-600 border-b border-slate-200/70 pb-3.5">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-[#0A0A0A] block shrink-0 border border-[#0A0A0A]" />
-          <span>ANSWERED</span>
+          <span className="w-3 h-3 rounded-md bg-slate-900 block shrink-0 border border-slate-800" />
+          <span>Answered</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-white border border-[#D9D9D9] block shrink-0" />
-          <span>UNANSWERED</span>
+          <span className="w-3 h-3 rounded-md bg-white border border-slate-300 block shrink-0" />
+          <span>Unanswered</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-amber-400 border border-amber-500 block shrink-0" />
-          <span>MARKED</span>
+          <span className="w-3 h-3 rounded-md bg-amber-400 border border-amber-500 block shrink-0" />
+          <span>Marked</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-[#0047FF] block shrink-0 border border-[#0047FF]" />
-          <span>CURRENT</span>
+          <span className="w-3 h-3 rounded-md bg-indigo-600 block shrink-0 ring-1 ring-indigo-400" />
+          <span>Current</span>
         </div>
       </div>
 
-      {/* Grid of Compact Rectangular Cells */}
-      <div className="grid grid-cols-7 sm:grid-cols-8 gap-1 max-h-[300px] overflow-y-auto pr-1">
+      {/* Grid of Rounded Tactile Cells */}
+      <div className="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-[300px] overflow-y-auto pr-1 py-1">
         {questions.map((q, idx) => (
           <button
             key={q.id}
@@ -96,13 +117,14 @@ export const QuestionPalette: React.FC<QuestionPaletteProps> = ({
       </div>
 
       {/* Submission CTA */}
-      <div className="pt-2 border-t border-[#D9D9D9]">
+      <div className="pt-2 border-t border-slate-200/70">
         <button
           type="button"
           onClick={onSubmitClick}
-          className="w-full font-mono text-xs font-bold uppercase tracking-wider bg-[#0047FF] hover:bg-[#0037c7] text-white py-2.5 transition-colors cursor-pointer"
+          className="liquid-glass-btn-primary w-full py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 cursor-pointer"
         >
-          SUBMIT EXAMINATION →
+          <span>SUBMIT EXAM</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

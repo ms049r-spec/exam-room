@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Question, ExamDefinition, ExamConfig } from '../types/exam';
 import { allQuestions } from '../data/questions/sampleExams';
 import { shuffleArray } from '../utils/examEngine';
+import { X, Sparkles, Sliders, Play, Layers } from 'lucide-react';
 
 interface ExamGeneratorModalProps {
   onClose: () => void;
@@ -61,37 +62,42 @@ export const ExamGeneratorModal: React.FC<ExamGeneratorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 font-sans">
-      <div className="bg-[#FAFAFA] border border-[#0A0A0A] max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-6 p-4 sm:p-8 shadow-2xl relative my-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 font-sans animate-in fade-in duration-150">
+      <div className="liquid-glass-panel rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-6 p-6 sm:p-8 shadow-2xl relative my-auto border border-white/80">
         {/* Top Header */}
-        <div className="border-b border-[#D9D9D9] pb-3 flex items-center justify-between font-mono text-xs">
+        <div className="border-b border-slate-200/70 pb-3 flex items-start justify-between">
           <div>
-            <span className="font-bold text-[#555555] uppercase tracking-wider block">
-              SPECIFICATION // COMPILER
-            </span>
-            <span className="font-bold text-base text-[#0A0A0A] uppercase tracking-tight">
-              COMPILE CUSTOM EXAM
-            </span>
+            <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-indigo-700 uppercase tracking-widest">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>CUSTOM TEST COMPILER</span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">
+              Build Practice Exam
+            </h2>
+            <p className="text-xs text-slate-500 font-sans mt-0.5">
+              Assemble a tailored question paper from the item bank
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="text-[#555555] hover:text-[#0A0A0A] font-bold uppercase cursor-pointer"
+            aria-label="Close dialog"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            [CLOSE]
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content */}
+        {/* Content Controls */}
         <div className="space-y-4 font-mono text-xs">
           {/* Subject */}
-          <div className="space-y-1">
-            <label className="font-bold text-[#0A0A0A] uppercase block">
-              1. SUBJECT DISCIPLINE
+          <div className="space-y-1.5">
+            <label className="font-bold text-slate-800 uppercase text-[11px] block">
+              1. Subject Discipline
             </label>
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full p-2 border border-[#D9D9D9] bg-white text-[#0A0A0A] uppercase font-bold focus:border-[#0047FF] focus:outline-none cursor-pointer"
+              className="liquid-glass-input w-full p-2.5 rounded-xl text-slate-900 font-semibold cursor-pointer"
             >
               {subjects.map((sub) => (
                 <option key={sub} value={sub}>
@@ -102,13 +108,13 @@ export const ExamGeneratorModal: React.FC<ExamGeneratorModalProps> = ({
           </div>
 
           {/* Question Count */}
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <label className="font-bold text-[#0A0A0A] uppercase">
-                2. QUESTION COUNT
+          <div className="space-y-2 p-3.5 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
+            <div className="flex justify-between items-center">
+              <label className="font-bold text-slate-800 uppercase text-[11px]">
+                2. Question Count
               </label>
-              <span className="text-[#0047FF] font-bold">
-                {questionCount} QUESTIONS ({pool.length} in pool)
+              <span className="text-indigo-700 font-bold tabular-nums bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/60">
+                {questionCount} Questions ({pool.length} pool)
               </span>
             </div>
             <input
@@ -117,25 +123,25 @@ export const ExamGeneratorModal: React.FC<ExamGeneratorModalProps> = ({
               max={Math.min(34, pool.length || 34)}
               value={questionCount}
               onChange={(e) => setQuestionCount(Number(e.target.value))}
-              className="w-full accent-[#0047FF] cursor-pointer"
+              className="w-full accent-indigo-600 cursor-pointer"
             />
           </div>
 
           {/* Difficulty */}
-          <div className="space-y-1">
-            <label className="font-bold text-[#0A0A0A] uppercase block">
-              3. DIFFICULTY LEVEL
+          <div className="space-y-1.5">
+            <label className="font-bold text-slate-800 uppercase text-[11px] block">
+              3. Difficulty Level
             </label>
-            <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center">
+            <div className="grid grid-cols-4 gap-1.5 text-center">
               {['all', 'easy', 'moderate', 'hard'].map((diff) => (
                 <button
                   key={diff}
                   type="button"
                   onClick={() => setDifficulty(diff)}
-                  className={`py-2 px-1 border uppercase font-bold transition-colors cursor-pointer text-[10px] sm:text-xs ${
+                  className={`py-2 px-1 rounded-xl uppercase font-bold transition-all cursor-pointer text-[10px] sm:text-xs ${
                     difficulty === diff
-                      ? 'bg-[#0047FF] text-white border-[#0047FF]'
-                      : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                      ? 'bg-indigo-600 text-white shadow-xs font-extrabold'
+                      : 'bg-white/70 hover:bg-white text-slate-600 border border-slate-200/80'
                   }`}
                 >
                   {diff}
@@ -145,51 +151,51 @@ export const ExamGeneratorModal: React.FC<ExamGeneratorModalProps> = ({
           </div>
 
           {/* Timing Mode */}
-          <div className="space-y-1">
-            <label className="font-bold text-[#0A0A0A] uppercase block">
-              4. TIME CONSTRAINTS
+          <div className="space-y-1.5">
+            <label className="font-bold text-slate-800 uppercase text-[11px] block">
+              4. Time Constraints
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="p-1 rounded-xl bg-slate-200/60 border border-slate-300/60 grid grid-cols-2 gap-1">
               <button
                 type="button"
                 onClick={() => setTimeMode('timed')}
-                className={`py-2 px-2 border uppercase font-bold transition-colors cursor-pointer text-xs ${
+                className={`py-2 px-2 rounded-lg uppercase font-bold transition-all cursor-pointer text-xs ${
                   timeMode === 'timed'
-                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                    : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                TIMED ({durationMinutes}m)
+                Timed ({durationMinutes}m)
               </button>
               <button
                 type="button"
                 onClick={() => setTimeMode('untimed')}
-                className={`py-2 px-2 border uppercase font-bold transition-colors cursor-pointer text-xs ${
+                className={`py-2 px-2 rounded-lg uppercase font-bold transition-all cursor-pointer text-xs ${
                   timeMode === 'untimed'
-                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                    : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                UNTIMED
+                Untimed Practice
               </button>
             </div>
           </div>
 
           {timeMode === 'timed' && (
-            <div className="space-y-1">
-              <label className="text-[#555555] uppercase block">
-                DURATION IN MINUTES
+            <div className="space-y-1.5">
+              <label className="text-slate-500 uppercase text-[10px] font-semibold block">
+                Duration In Minutes
               </label>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {[5, 10, 15, 30, 45].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setDurationMinutes(m)}
-                    className={`px-3 py-1.5 border font-bold text-xs cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-all tabular-nums ${
                       durationMinutes === m
-                        ? 'bg-[#0047FF] text-white border-[#0047FF]'
-                        : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-white/70 text-slate-600 border border-slate-200/80 hover:border-slate-300'
                     }`}
                   >
                     {m}m
@@ -200,18 +206,18 @@ export const ExamGeneratorModal: React.FC<ExamGeneratorModalProps> = ({
           )}
 
           {/* Marking Scheme */}
-          <div className="space-y-1">
-            <label className="font-bold text-[#0A0A0A] uppercase block">
-              5. MARKING SYSTEM
+          <div className="space-y-1.5">
+            <label className="font-bold text-slate-800 uppercase text-[11px] block">
+              5. Marking Scheme
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setMarkingSchemeType('standard')}
-                className={`py-2 px-2 border uppercase font-bold transition-colors cursor-pointer text-[11px] sm:text-xs ${
+                className={`py-2 px-2.5 rounded-xl uppercase font-bold transition-all cursor-pointer text-xs ${
                   markingSchemeType === 'standard'
-                    ? 'bg-[#0047FF] text-white border-[#0047FF]'
-                    : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                    ? 'bg-indigo-50 border border-indigo-500/70 text-indigo-900 shadow-xs'
+                    : 'bg-white/70 text-slate-600 border border-slate-200/80 hover:bg-white'
                 }`}
               >
                 NEET (+4 / -1)
@@ -219,10 +225,10 @@ export const ExamGeneratorModal: React.FC<ExamGeneratorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setMarkingSchemeType('jee')}
-                className={`py-2 px-2 border uppercase font-bold transition-colors cursor-pointer text-[11px] sm:text-xs ${
+                className={`py-2 px-2.5 rounded-xl uppercase font-bold transition-all cursor-pointer text-xs ${
                   markingSchemeType === 'jee'
-                    ? 'bg-[#0047FF] text-white border-[#0047FF]'
-                    : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                    ? 'bg-indigo-50 border border-indigo-500/70 text-indigo-900 shadow-xs'
+                    : 'bg-white/70 text-slate-600 border border-slate-200/80 hover:bg-white'
                 }`}
               >
                 STD (+1 / -0.25)
@@ -232,21 +238,22 @@ export const ExamGeneratorModal: React.FC<ExamGeneratorModalProps> = ({
         </div>
 
         {/* Generate CTA */}
-        <div className="pt-4 border-t border-[#D9D9D9] flex items-center justify-between font-mono text-xs">
+        <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-3 font-mono text-xs">
           <button
             type="button"
             onClick={onClose}
-            className="text-[#555555] hover:text-[#0A0A0A] uppercase tracking-wider underline cursor-pointer"
+            className="liquid-glass-btn-secondary px-4 py-2.5 rounded-xl font-bold cursor-pointer"
           >
-            CANCEL
+            Cancel
           </button>
           <button
             type="button"
             onClick={handleGenerate}
             disabled={pool.length === 0}
-            className="bg-[#0047FF] hover:bg-[#0037c7] text-white px-6 sm:px-8 py-3 font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-xs disabled:opacity-25"
+            className="liquid-glass-btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold uppercase tracking-wider cursor-pointer disabled:opacity-30"
           >
-            COMPILE & LAUNCH →
+            <Play className="w-3.5 h-3.5 fill-white" />
+            <span>GENERATE & LAUNCH</span>
           </button>
         </div>
       </div>

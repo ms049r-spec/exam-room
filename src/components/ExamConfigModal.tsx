@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ExamDefinition, ExamConfig } from '../types/exam';
+import { X, Play, Clock, Shuffle, Check, Sparkles } from 'lucide-react';
 
 interface ExamConfigModalProps {
   exam: ExamDefinition;
@@ -29,81 +30,90 @@ export const ExamConfigModal: React.FC<ExamConfigModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-[#FAFAFA] border border-[#0A0A0A] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-8 space-y-6 shadow-2xl relative my-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+      <div className="liquid-glass-panel rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl relative my-auto border border-white/80">
         {/* Top: Examination Code & Title */}
-        <div className="flex items-start justify-between border-b border-[#D9D9D9] pb-4 gap-3">
+        <div className="flex items-start justify-between border-b border-slate-200/70 pb-4 gap-3">
           <div className="space-y-1 min-w-0">
-            <div className="font-mono text-xs font-bold text-[#555555] uppercase tracking-wider">
-              EXAMINATION SPECIFICATION // {exam.id.toUpperCase().slice(0, 8)}
+            <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+              <span>{exam.subject}</span>
+              <span className="text-slate-300" aria-hidden="true">·</span>
+              <span className="text-slate-500">{exam.difficulty}</span>
             </div>
-            <h1 className="text-lg sm:text-2xl font-bold text-[#0A0A0A] uppercase tracking-tight break-words">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight break-words">
               {exam.title}
             </h1>
-            <div className="font-mono text-xs text-[#555555]">
-              {exam.subject.toUpperCase()} // {exam.chapter.toUpperCase()}
-            </div>
+            <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+              {exam.description}
+            </p>
           </div>
 
           <button
             onClick={onClose}
-            className="font-mono text-xs font-bold text-[#555555] hover:text-[#0A0A0A] uppercase tracking-wider cursor-pointer shrink-0"
+            aria-label="Close dialog"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           >
-            [CLOSE]
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Horizontal Metadata Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 border border-[#D9D9D9] bg-white divide-x divide-y sm:divide-y-0 divide-[#D9D9D9] font-mono text-xs text-center">
-          <div className="p-2.5 sm:p-3">
-            <span className="text-[10px] text-[#555555] block uppercase">QUESTIONS</span>
-            <span className="font-bold text-xs sm:text-sm text-[#0A0A0A]">{exam.questionCount}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono text-xs text-center">
+          <div className="p-3 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
+            <span className="text-[10px] text-slate-500 block uppercase font-medium">QUESTIONS</span>
+            <span className="font-bold text-sm sm:text-base text-slate-900 tabular-nums">{exam.questionCount}</span>
           </div>
-          <div className="p-2.5 sm:p-3">
-            <span className="text-[10px] text-[#555555] block uppercase">MAX MARKS</span>
-            <span className="font-bold text-xs sm:text-sm text-[#0A0A0A]">{totalMarks}</span>
+          <div className="p-3 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
+            <span className="text-[10px] text-slate-500 block uppercase font-medium">MAX MARKS</span>
+            <span className="font-bold text-sm sm:text-base text-slate-900 tabular-nums">{totalMarks}</span>
           </div>
-          <div className="p-2.5 sm:p-3">
-            <span className="text-[10px] text-[#555555] block uppercase">DURATION</span>
-            <span className="font-bold text-xs sm:text-sm text-[#0A0A0A]">{exam.defaultDurationMinutes} MIN</span>
+          <div className="p-3 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
+            <span className="text-[10px] text-slate-500 block uppercase font-medium">DURATION</span>
+            <span className="font-bold text-sm sm:text-base text-slate-900 tabular-nums">{exam.defaultDurationMinutes}m</span>
           </div>
-          <div className="p-2.5 sm:p-3">
-            <span className="text-[10px] text-[#555555] block uppercase">MARKING</span>
-            <span className="font-bold text-xs sm:text-sm text-[#0047FF]">+{exam.markingScheme.correct} / {exam.markingScheme.incorrect}</span>
+          <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200/80 shadow-2xs">
+            <span className="text-[10px] text-indigo-700 block uppercase font-medium">MARKING</span>
+            <span className="font-bold text-sm sm:text-base text-indigo-700 tabular-nums">+{exam.markingScheme.correct} / {exam.markingScheme.incorrect}</span>
           </div>
         </div>
 
         {/* Exam Settings */}
-        <div className="space-y-5 pt-2 font-mono text-xs">
-          <div className="font-bold uppercase tracking-wider text-[#0A0A0A] border-b border-[#D9D9D9] pb-1">
-            EXAM SETTINGS
+        <div className="space-y-5 pt-1 font-mono text-xs">
+          <div className="flex items-center justify-between border-b border-slate-200/70 pb-2">
+            <span className="font-bold uppercase tracking-wider text-slate-800 text-xs">
+              Simulation Options
+            </span>
+            <span className="text-[11px] text-slate-400 font-normal">
+              Configure session constraints
+            </span>
           </div>
 
-          {/* TIMER MODE */}
+          {/* TIMER MODE: iOS Segmented Control */}
           <div className="space-y-2">
-            <span className="text-[#555555] uppercase block">TIMER MODE</span>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className="text-slate-600 uppercase font-semibold text-[11px] block">Timing Mode</span>
+            <div className="p-1 rounded-xl bg-slate-200/60 border border-slate-300/60 grid grid-cols-2 gap-1 max-w-sm">
               <button
                 type="button"
                 onClick={() => setTimeMode('timed')}
-                className={`px-3 sm:px-4 py-2 border font-bold uppercase cursor-pointer text-xs ${
+                className={`py-2 px-3 rounded-lg font-bold transition-all text-xs cursor-pointer flex items-center justify-center gap-1.5 ${
                   timeMode === 'timed'
-                    ? 'bg-[#0047FF] text-white border-[#0047FF]'
-                    : 'bg-white text-[#0A0A0A] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                [ TIMED: {selectedDuration} MIN ]
+                <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Timed ({selectedDuration}m)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setTimeMode('untimed')}
-                className={`px-3 sm:px-4 py-2 border font-bold uppercase cursor-pointer text-xs ${
+                className={`py-2 px-3 rounded-lg font-bold transition-all text-xs cursor-pointer flex items-center justify-center gap-1.5 ${
                   timeMode === 'untimed'
-                    ? 'bg-[#0047FF] text-white border-[#0047FF]'
-                    : 'bg-white text-[#0A0A0A] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                [ UNTIMED / PRACTICE ]
+                <span>Untimed Practice</span>
               </button>
             </div>
           </div>
@@ -111,72 +121,94 @@ export const ExamConfigModal: React.FC<ExamConfigModalProps> = ({
           {/* CUSTOM TIME DURATION (Only if timed) */}
           {timeMode === 'timed' && (
             <div className="space-y-2">
-              <span className="text-[#555555] uppercase block">CUSTOM TIMER DURATION</span>
+              <span className="text-slate-600 uppercase font-semibold text-[11px] block">Exam Duration</span>
               <div className="flex flex-wrap items-center gap-2">
                 {[10, 15, 30, 45, 60, 90].map((mins) => (
                   <button
                     key={mins}
                     type="button"
                     onClick={() => setSelectedDuration(mins)}
-                    className={`px-3 py-1.5 border font-bold text-xs cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg border font-bold text-xs cursor-pointer transition-all tabular-nums ${
                       selectedDuration === mins
-                        ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                        : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                        : 'bg-white/80 text-slate-700 border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    {mins}m
+                    {mins} min
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* RANDOMIZATION OPTIONS */}
-          <div className="space-y-2 pt-2 border-t border-[#D9D9D9]">
-            <span className="text-[#555555] uppercase block">RANDOMIZATION / SHUFFLE</span>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={shuffleQuestions}
-                  onChange={(e) => setShuffleQuestions(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#0047FF] border-[#D9D9D9] focus:ring-[#0047FF] cursor-pointer"
-                />
-                <span className="text-xs text-[#0A0A0A] font-bold uppercase">
-                  Shuffle Question Order
-                </span>
-              </label>
+          {/* RANDOMIZATION OPTIONS: iOS Toggle rows */}
+          <div className="space-y-3 pt-2 border-t border-slate-200/70">
+            <span className="text-slate-600 uppercase font-semibold text-[11px] block">Randomization & Order</span>
 
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={shuffleOptions}
-                  onChange={(e) => setShuffleOptions(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#0047FF] border-[#D9D9D9] focus:ring-[#0047FF] cursor-pointer"
-                />
-                <span className="text-xs text-[#0A0A0A] font-bold uppercase">
-                  Shuffle Multiple Choice Options
-                </span>
-              </label>
+            <div className="space-y-2">
+              {/* Question Shuffle Toggle */}
+              <div
+                onClick={() => setShuffleQuestions(!shuffleQuestions)}
+                className="p-3 rounded-xl bg-white/70 border border-slate-200/80 flex items-center justify-between cursor-pointer hover:bg-white transition-all shadow-2xs"
+              >
+                <div className="space-y-0.5">
+                  <div className="font-bold text-slate-900 text-xs">Shuffle Question Sequence</div>
+                  <div className="text-[11px] text-slate-500 font-sans">Presents test items in randomized order</div>
+                </div>
+                <div
+                  className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                    shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Option Shuffle Toggle */}
+              <div
+                onClick={() => setShuffleOptions(!shuffleOptions)}
+                className="p-3 rounded-xl bg-white/70 border border-slate-200/80 flex items-center justify-between cursor-pointer hover:bg-white transition-all shadow-2xs"
+              >
+                <div className="space-y-0.5">
+                  <div className="font-bold text-slate-900 text-xs">Shuffle Multiple Choice Choices</div>
+                  <div className="text-[11px] text-slate-500 font-sans">Permutes options A through D to counter positional guessing</div>
+                </div>
+                <div
+                  className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                    shuffleOptions ? 'bg-indigo-600' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      shuffleOptions ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Launch Button */}
-        <div className="pt-4 border-t border-[#D9D9D9] flex items-center justify-between font-mono text-xs">
+        <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-3 font-mono text-xs">
           <button
             type="button"
             onClick={onClose}
-            className="text-[#555555] hover:text-[#0A0A0A] uppercase tracking-wider underline cursor-pointer"
+            className="liquid-glass-btn-secondary px-4 py-2.5 rounded-xl font-bold cursor-pointer"
           >
-            CANCEL
+            Cancel
           </button>
           <button
             type="button"
             onClick={handleStart}
-            className="bg-[#0047FF] hover:bg-[#0037c7] text-white px-6 sm:px-8 py-3 font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
+            className="liquid-glass-btn-primary inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider cursor-pointer"
           >
-            START CBT SIMULATION →
+            <Play className="w-3.5 h-3.5 fill-white" />
+            <span>START CBT SIMULATION</span>
           </button>
         </div>
       </div>

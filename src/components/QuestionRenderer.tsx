@@ -1,5 +1,6 @@
 import React from 'react';
 import { Question } from '../types/exam';
+import { Bookmark, Check, Shield } from 'lucide-react';
 
 interface QuestionRendererProps {
   question: Question;
@@ -47,19 +48,19 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
   const padNum = (n: number) => n.toString().padStart(2, '0');
 
   return (
-    <div className="space-y-6">
+    <div className="liquid-glass-panel rounded-2xl p-5 sm:p-7 space-y-6 shadow-sm border border-white/80">
       {/* Top Question Strip */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#D9D9D9] font-mono text-xs">
-        <div className="flex items-center gap-4">
-          <span className="font-bold text-sm text-[#0A0A0A] tracking-wider uppercase">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#4A4E69]/15 font-mono text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-[#4A4E69]">
+          <span className="font-extrabold text-[#22223B] tracking-wider uppercase text-xs sm:text-sm">
             QUESTION {padNum(questionNumber)} OF {padNum(totalQuestions)}
           </span>
-          <span className="text-[#D9D9D9]">|</span>
-          <span className="text-[#0047FF] font-bold">
-            SCHEME: +{question.marks.correct} / {question.marks.incorrect}
+          <span className="text-[#9A8C98]" aria-hidden="true">·</span>
+          <span className="text-[#22223B] font-bold bg-[#C9ADA7]/30 px-2 py-0.5 rounded-md border border-[#C9ADA7]/60 tabular-nums">
+            +{question.marks.correct} / {question.marks.incorrect}
           </span>
-          <span className="text-[#D9D9D9] hidden sm:inline">|</span>
-          <span className="text-[#555555] uppercase hidden sm:inline">
+          <span className="text-[#9A8C98] hidden sm:inline" aria-hidden="true">·</span>
+          <span className="text-[#4A4E69] uppercase tracking-wide hidden sm:inline">
             {question.topic}
           </span>
         </div>
@@ -67,31 +68,32 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
         <button
           type="button"
           onClick={onToggleBookmark}
-          className={`px-3 py-1 border transition-colors cursor-pointer uppercase font-bold text-xs ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-mono text-xs font-bold transition-all cursor-pointer shadow-2xs ${
             isBookmarked
-              ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-              : 'bg-white text-[#555555] border-[#D9D9D9] hover:border-[#0A0A0A]'
+              ? 'bg-[#C9ADA7] text-[#22223B] border-[#9A8C98]'
+              : 'liquid-glass-btn-secondary text-[#22223B]'
           }`}
         >
-          {isBookmarked ? '★ BOOKMARKED' : '☆ BOOKMARK'}
+          <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-[#22223B] text-[#22223B]' : 'text-[#9A8C98]'}`} />
+          <span>{isBookmarked ? 'SAVED' : 'SAVE'}</span>
         </button>
       </div>
 
       {/* Prominent Question Statement */}
       <div className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-[#0A0A0A] leading-relaxed tracking-tight">
+        <h2 className="text-lg sm:text-xl font-bold text-[#22223B] leading-relaxed tracking-tight">
           {question.question}
         </h2>
 
         {/* Statements Variant */}
         {question.statements && question.statements.length > 0 && (
-          <div className="p-4 bg-white border border-[#D9D9D9] space-y-2 text-sm font-sans">
+          <div className="p-4 bg-white/70 rounded-xl border border-[#9A8C98]/30 space-y-2 text-sm font-sans shadow-2xs">
             {question.statements.map((stmt, idx) => (
-              <div key={idx} className="flex gap-3 text-[#0A0A0A]">
-                <span className="font-mono font-bold text-[#555555] shrink-0">
+              <div key={idx} className="flex gap-3 text-[#22223B]">
+                <span className="font-mono font-bold text-[#4A4E69] shrink-0">
                   {stmt.substring(0, stmt.indexOf('.'))}
                 </span>
-                <span>{stmt.substring(stmt.indexOf('.') + 1)}</span>
+                <span className="leading-relaxed">{stmt.substring(stmt.indexOf('.') + 1)}</span>
               </div>
             ))}
           </div>
@@ -99,44 +101,44 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
 
         {/* Assertion-Reason Variant */}
         {question.assertion && question.reason && (
-          <div className="space-y-2 text-sm">
-            <div className="p-3 bg-white border border-[#D9D9D9]">
-              <span className="text-xs font-mono font-bold text-[#0047FF] block mb-1">
+          <div className="space-y-2.5 text-sm">
+            <div className="p-3.5 bg-white/70 rounded-xl border border-[#9A8C98]/30 shadow-2xs">
+              <span className="text-xs font-mono font-bold text-[#4A4E69] block mb-1">
                 ASSERTION (A):
               </span>
-              <p className="text-[#0A0A0A] font-medium">{question.assertion}</p>
+              <p className="text-[#22223B] font-medium leading-relaxed">{question.assertion}</p>
             </div>
-            <div className="p-3 bg-white border border-[#D9D9D9]">
-              <span className="text-xs font-mono font-bold text-[#0047FF] block mb-1">
+            <div className="p-3.5 bg-white/70 rounded-xl border border-[#9A8C98]/30 shadow-2xs">
+              <span className="text-xs font-mono font-bold text-[#4A4E69] block mb-1">
                 REASON (R):
               </span>
-              <p className="text-[#0A0A0A] font-medium">{question.reason}</p>
+              <p className="text-[#22223B] font-medium leading-relaxed">{question.reason}</p>
             </div>
           </div>
         )}
 
         {/* Match the Following Variant */}
         {question.columnA && question.columnB && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white border border-[#D9D9D9] text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 bg-white/70 rounded-xl border border-[#9A8C98]/30 text-sm shadow-2xs">
             <div className="space-y-2">
-              <span className="font-mono text-xs font-bold text-[#555552] block border-b border-[#D9D9D9] pb-1">
+              <span className="font-mono text-xs font-bold text-[#4A4E69] block border-b border-[#4A4E69]/15 pb-1">
                 COLUMN I
               </span>
               {question.columnA.map((item) => (
                 <div key={item.key} className="flex gap-2 text-xs font-mono">
-                  <span className="font-bold text-[#0047FF] w-4">{item.key}.</span>
-                  <span>{item.text}</span>
+                  <span className="font-bold text-[#22223B] w-4">{item.key}.</span>
+                  <span className="text-[#22223B]">{item.text}</span>
                 </div>
               ))}
             </div>
             <div className="space-y-2">
-              <span className="font-mono text-xs font-bold text-[#555552] block border-b border-[#D9D9D9] pb-1">
+              <span className="font-mono text-xs font-bold text-[#4A4E69] block border-b border-[#4A4E69]/15 pb-1">
                 COLUMN II
               </span>
               {question.columnB.map((item) => (
                 <div key={item.key} className="flex gap-2 text-xs font-mono">
-                  <span className="font-bold text-[#0047FF] w-4">{item.key}.</span>
-                  <span>{item.text}</span>
+                  <span className="font-bold text-[#22223B] w-4">{item.key}.</span>
+                  <span className="text-[#22223B]">{item.text}</span>
                 </div>
               ))}
             </div>
@@ -144,8 +146,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
         )}
       </div>
 
-      {/* Answer Choices: Horizontal Structured Rows */}
-      <div className="border-t border-[#D9D9D9] divide-y divide-[#D9D9D9]">
+      {/* Answer Choices: Clearly defined boundaries and dark black/space-indigo letters */}
+      <div className="space-y-3 pt-2">
         {question.options.map((opt, index) => {
           const selected = isSelected(index);
           const letter = letters[index] || `${index + 1}`;
@@ -154,32 +156,44 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
             <div
               key={index}
               onClick={() => handleOptionClick(index)}
-              className={`py-4 px-3 flex items-start gap-4 cursor-pointer transition-colors ${
+              className={`p-3.5 sm:p-4 rounded-xl flex items-start gap-3.5 cursor-pointer transition-all duration-150 border-2 ${
                 selected
-                  ? 'bg-[#EEF2FF] border-l-2 border-l-[#0047FF]'
-                  : 'bg-transparent hover:bg-white'
+                  ? 'bg-[#C9ADA7]/25 border-[#22223B] shadow-sm ring-1 ring-[#22223B]/30'
+                  : 'bg-white/75 hover:bg-white border-[#4A4E69]/30 hover:border-[#22223B]/60 shadow-2xs'
               }`}
             >
-              {/* Option Letter */}
-              <span className="font-mono text-sm font-bold text-[#0A0A0A] shrink-0 w-4 pt-0.5">
+              {/* Option Letter Badge: Dark black / Space Indigo readable badge */}
+              <span
+                className={`font-mono text-xs font-black shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors border ${
+                  selected
+                    ? 'bg-[#22223B] text-[#F2E9E4] border-[#22223B] shadow-2xs'
+                    : 'bg-[#22223B]/10 text-[#22223B] border-[#22223B]/25'
+                }`}
+              >
                 {letter}
               </span>
 
-              {/* Radio Indicator: ○ vs ● */}
-              <span className="shrink-0 pt-0.5 select-none">
-                {selected ? (
-                  <span className="w-4 h-4 border border-[#0047FF] flex items-center justify-center inline-block bg-[#0047FF]">
-                    <span className="w-1.5 h-1.5 bg-white block"></span>
-                  </span>
-                ) : (
-                  <span className="w-4 h-4 border border-[#D9D9D9] block inline-block hover:border-[#0A0A0A] bg-white"></span>
-                )}
-              </span>
-
               {/* Option Text */}
-              <span className={`text-base leading-relaxed ${selected ? 'font-bold text-[#0A0A0A]' : 'text-[#222222]'}`}>
+              <span
+                className={`text-sm sm:text-base leading-relaxed flex-1 ${
+                  selected ? 'font-bold text-[#22223B]' : 'font-medium text-[#22223B]'
+                }`}
+              >
                 {opt}
               </span>
+
+              {/* Selection Check Circle */}
+              <div className="shrink-0 pt-0.5">
+                <div
+                  className={`w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all ${
+                    selected
+                      ? 'border-[#22223B] bg-[#22223B] text-[#F2E9E4] shadow-2xs'
+                      : 'border-[#9A8C98] bg-white/90'
+                  }`}
+                >
+                  {selected && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
+              </div>
             </div>
           );
         })}

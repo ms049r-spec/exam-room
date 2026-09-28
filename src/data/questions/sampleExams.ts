@@ -317,6 +317,8 @@ export const examDefinitions: ExamDefinition[] = [
     markingScheme: { correct: 4, incorrect: -1, unattempted: 0 },
     tag: 'NEET Standard',
     featured: true,
+    createdAt: '2026-01-01T12:00:00.000Z',
+    updatedAt: '2026-01-01T12:00:00.000Z',
     questions: excretorySystemQuestions
   },
   {
@@ -331,6 +333,8 @@ export const examDefinitions: ExamDefinition[] = [
     markingScheme: { correct: 4, incorrect: -1, unattempted: 0 },
     tag: 'NEET Standard',
     featured: true,
+    createdAt: '2026-01-02T10:00:00.000Z',
+    updatedAt: '2026-01-02T10:00:00.000Z',
     questions: anatomyOfFloweringPlantsQuestions
   },
   {
@@ -344,6 +348,8 @@ export const examDefinitions: ExamDefinition[] = [
     defaultDurationMinutes: 10,
     markingScheme: { correct: 4, incorrect: -1, unattempted: 0 },
     tag: 'Quick Sprint',
+    createdAt: '2026-01-01T09:00:00.000Z',
+    updatedAt: '2026-01-01T09:00:00.000Z',
     questions: cellBiologyQuestions
   },
   {
@@ -357,6 +363,8 @@ export const examDefinitions: ExamDefinition[] = [
     defaultDurationMinutes: 15,
     markingScheme: { correct: 4, incorrect: -1, unattempted: 0 },
     tag: 'Concept Drill',
+    createdAt: '2026-01-01T08:00:00.000Z',
+    updatedAt: '2026-01-01T08:00:00.000Z',
     questions: physicsKinematicsQuestions
   },
   {
@@ -370,6 +378,8 @@ export const examDefinitions: ExamDefinition[] = [
     defaultDurationMinutes: 15,
     markingScheme: { correct: 4, incorrect: -1, unattempted: 0 },
     tag: 'High Yield',
+    createdAt: '2026-01-01T07:00:00.000Z',
+    updatedAt: '2026-01-01T07:00:00.000Z',
     questions: chemistryBondingQuestions
   }
 ];

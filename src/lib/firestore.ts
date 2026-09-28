@@ -7,10 +7,11 @@ import {
   deleteDoc,
   query,
   orderBy,
-  limit
+  limit,
+  onSnapshot
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
-import { ExamResult } from '../types/exam';
+import { ExamResult, MistakeEntry, Question } from '../types/exam';
 import { calculateAuraPoints } from '../utils/aura';
 import { localStore } from '../storage/localStore';
 
@@ -60,6 +61,44 @@ export interface FirestoreMistakeData {
 export interface FirestoreSavedQuestionData {
   questionId: string;
   savedAt: number;
+}
+
+/**
+ * Standard parser to convert a raw Firestore attempt document to ExamResult.
+ */
+export function parseFirestoreAttempt(docId: string, data: FirestoreAttemptData): ExamResult {
+  let parsedAnswers: Record<string, number | number[]> = {};
+  try {
+    parsedAnswers = typeof data.answers === 'string' ? JSON.parse(data.answers) : (data.answers || {});
+  } catch {
+    parsedAnswers = {};
+  }
+
+  const totalQuestions = (data.correct || 0) + (data.wrong || 0) + (data.unattempted || 0);
+
+  return {
+    id: docId,
+    examId: data.examId,
+    examTitle: data.examTitle,
+    subject: data.subject,
+    timestamp: data.completedAt || Date.now(),
+    totalQuestions: totalQuestions || (data.questions ? data.questions.length : 0),
+    attemptedCount: (data.correct || 0) + (data.wrong || 0),
+    correctCount: data.correct || 0,
+    wrongCount: data.wrong || 0,
+    unattemptedCount: data.unattempted || 0,
+    score: data.score || 0,
+    maxScore: data.maxScore || (totalQuestions * 4),
+    percentage: typeof data.percentage === 'number' ? data.percentage : 0,
+    accuracy: typeof data.accuracy === 'number' ? data.accuracy : 0,
+    timeTakenSeconds: data.timeTaken || 0,
+    totalTimeSeconds: null,
+    isTimed: data.isTimed || false,
+    answers: parsedAnswers,
+    questions: data.questions || [],
+    incorrectQuestionIds: data.incorrectQuestionIds || [],
+    topicBreakdown: {}
+  };
 }
 
 // 1. User Profile Document
@@ -124,12 +163,22 @@ export async function saveAttemptToFirestore(
 
   await setDoc(attemptRef, attemptDoc);
 
-  // Sync mistakes in Firestore
+  // Sync mistakes in Firestore subcollection users/{uid}/mistakes
   if (result.incorrectQuestionIds && result.incorrectQuestionIds.length > 0) {
     const incorrectSet = new Set(result.incorrectQuestionIds);
     for (const q of result.questions) {
       if (incorrectSet.has(q.id)) {
         await saveMistakeToFirestore(uid, q.id, result.examId, 1, q);
+      }
+    }
+  }
+
+  // If question was answered correctly in this attempt, decrement or remove from mistakes
+  if (result.answers) {
+    const incorrectSet = new Set(result.incorrectQuestionIds || []);
+    for (const q of result.questions) {
+      if (!incorrectSet.has(q.id) && result.answers[q.id] !== undefined) {
+        await decrementOrRemoveMistakeFromFirestore(uid, q.id);
       }
     }
   }
@@ -141,66 +190,72 @@ export async function getUserAttemptsFromFirestore(uid: string): Promise<ExamRes
   if (!db || !isFirebaseConfigured) return [];
   try {
     const attemptsCol = collection(db, 'users', uid, 'attempts');
-    const q = query(attemptsCol, orderBy('completedAt', 'desc'), limit(100));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(attemptsCol);
 
-    return snapshot.docs.map((docSnap) => {
-      const data = docSnap.data() as FirestoreAttemptData;
-      let parsedAnswers: Record<string, number | number[]> = {};
-      try {
-        parsedAnswers = typeof data.answers === 'string' ? JSON.parse(data.answers) : (data.answers || {});
-      } catch {
-        parsedAnswers = {};
-      }
-
-      const totalQuestions = (data.correct || 0) + (data.wrong || 0) + (data.unattempted || 0);
-
-      const examResult: ExamResult = {
-        id: docSnap.id,
-        examId: data.examId,
-        examTitle: data.examTitle,
-        subject: data.subject,
-        timestamp: data.completedAt,
-        totalQuestions: totalQuestions || (data.questions ? data.questions.length : 0),
-        attemptedCount: (data.correct || 0) + (data.wrong || 0),
-        correctCount: data.correct,
-        wrongCount: data.wrong,
-        unattemptedCount: data.unattempted,
-        score: data.score,
-        maxScore: data.maxScore || (totalQuestions * 4),
-        percentage: data.percentage,
-        accuracy: data.accuracy,
-        timeTakenSeconds: data.timeTaken,
-        totalTimeSeconds: null,
-        isTimed: data.isTimed || false,
-        answers: parsedAnswers,
-        questions: data.questions || [],
-        incorrectQuestionIds: data.incorrectQuestionIds || [],
-        topicBreakdown: {}
-      };
-      return examResult;
+    const results = snapshot.docs.map((docSnap) => {
+      return parseFirestoreAttempt(docSnap.id, docSnap.data() as FirestoreAttemptData);
     });
+    results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return results;
   } catch (err) {
     console.warn('Failed to load attempts from Firestore:', err);
     return [];
   }
 }
 
-// 3. Bookmarks: users/{uid}/bookmarks/{questionId}
+/**
+ * Real-time listener for user attempts.
+ * Returns unsubscribe function.
+ */
+export function listenToUserAttempts(
+  uid: string,
+  onUpdate: (attempts: ExamResult[]) => void,
+  onError?: (err: Error) => void
+): () => void {
+  if (!db || !isFirebaseConfigured) {
+    onUpdate([]);
+    return () => {};
+  }
+  const attemptsCol = collection(db, 'users', uid, 'attempts');
+  return onSnapshot(
+    attemptsCol,
+    (snapshot) => {
+      const results = snapshot.docs.map((docSnap) => {
+        return parseFirestoreAttempt(docSnap.id, docSnap.data() as FirestoreAttemptData);
+      });
+      results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      onUpdate(results);
+    },
+    (err) => {
+      console.warn('Realtime attempts listener error:', err);
+      if (onError) onError(err);
+    }
+  );
+}
+
+// 3. Bookmarks & Saved Questions: users/{uid}/bookmarks/{questionId} & users/{uid}/savedQuestions/{questionId}
 export async function saveBookmarkToFirestore(uid: string, questionId: string): Promise<void> {
   if (!db || !isFirebaseConfigured) return;
   const bookmarkRef = doc(db, 'users', uid, 'bookmarks', questionId);
+  const savedRef = doc(db, 'users', uid, 'savedQuestions', questionId);
   const data: FirestoreBookmarkData = {
     questionId,
     savedAt: Date.now()
   };
-  await setDoc(bookmarkRef, data);
+  await Promise.all([
+    setDoc(bookmarkRef, data),
+    setDoc(savedRef, data)
+  ]);
 }
 
 export async function removeBookmarkFromFirestore(uid: string, questionId: string): Promise<void> {
   if (!db || !isFirebaseConfigured) return;
   const bookmarkRef = doc(db, 'users', uid, 'bookmarks', questionId);
-  await deleteDoc(bookmarkRef);
+  const savedRef = doc(db, 'users', uid, 'savedQuestions', questionId);
+  await Promise.all([
+    deleteDoc(bookmarkRef),
+    deleteDoc(savedRef)
+  ]);
 }
 
 export async function getUserBookmarksFromFirestore(uid: string): Promise<string[]> {
@@ -215,7 +270,51 @@ export async function getUserBookmarksFromFirestore(uid: string): Promise<string
   }
 }
 
-// 4. Mistakes: users/{uid}/mistakes/{questionId}
+export function listenToUserBookmarks(
+  uid: string,
+  onUpdate: (bookmarks: string[]) => void,
+  onError?: (err: Error) => void
+): () => void {
+  if (!db || !isFirebaseConfigured) {
+    onUpdate([]);
+    return () => {};
+  }
+  const colRef = collection(db, 'users', uid, 'bookmarks');
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const ids = snapshot.docs.map((docSnap) => docSnap.id);
+      onUpdate(ids);
+    },
+    (err) => {
+      console.warn('Realtime bookmarks listener error:', err);
+      if (onError) onError(err);
+    }
+  );
+}
+
+// 4. Saved Questions (synced with bookmarks)
+export async function saveSavedQuestionToFirestore(uid: string, questionId: string): Promise<void> {
+  return saveBookmarkToFirestore(uid, questionId);
+}
+
+export async function removeSavedQuestionFromFirestore(uid: string, questionId: string): Promise<void> {
+  return removeBookmarkFromFirestore(uid, questionId);
+}
+
+export async function getUserSavedQuestionsFromFirestore(uid: string): Promise<string[]> {
+  return getUserBookmarksFromFirestore(uid);
+}
+
+export function listenToUserSavedQuestions(
+  uid: string,
+  onUpdate: (saved: string[]) => void,
+  onError?: (err: Error) => void
+): () => void {
+  return listenToUserBookmarks(uid, onUpdate, onError);
+}
+
+// 5. Mistakes: users/{uid}/mistakes/{questionId}
 export async function saveMistakeToFirestore(
   uid: string,
   questionId: string,
@@ -238,10 +337,44 @@ export async function saveMistakeToFirestore(
   await setDoc(mistakeRef, data, { merge: true });
 }
 
+export async function decrementOrRemoveMistakeFromFirestore(
+  uid: string,
+  questionId: string
+): Promise<void> {
+  if (!db || !isFirebaseConfigured) return;
+  try {
+    const mistakeRef = doc(db, 'users', uid, 'mistakes', questionId);
+    const snap = await getDoc(mistakeRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const attempts = data.attempts || 1;
+      if (attempts <= 1) {
+        await deleteDoc(mistakeRef);
+      } else {
+        await setDoc(mistakeRef, { attempts: attempts - 1 }, { merge: true });
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to decrement mistake:', err);
+  }
+}
+
 export async function removeMistakeFromFirestore(uid: string, questionId: string): Promise<void> {
   if (!db || !isFirebaseConfigured) return;
   const mistakeRef = doc(db, 'users', uid, 'mistakes', questionId);
   await deleteDoc(mistakeRef);
+}
+
+export async function clearUserMistakesFromFirestore(uid: string): Promise<void> {
+  if (!db || !isFirebaseConfigured) return;
+  try {
+    const colRef = collection(db, 'users', uid, 'mistakes');
+    const snapshot = await getDocs(colRef);
+    const deletions = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
+    await Promise.all(deletions);
+  } catch (err) {
+    console.warn('Failed to clear mistakes in Firestore:', err);
+  }
 }
 
 export async function getUserMistakesFromFirestore(uid: string): Promise<Record<string, FirestoreMistakeData>> {
@@ -260,33 +393,36 @@ export async function getUserMistakesFromFirestore(uid: string): Promise<Record<
   }
 }
 
-// 5. Saved Questions: users/{uid}/savedQuestions/{questionId}
-export async function saveSavedQuestionToFirestore(uid: string, questionId: string): Promise<void> {
-  if (!db || !isFirebaseConfigured) return;
-  const ref = doc(db, 'users', uid, 'savedQuestions', questionId);
-  const data: FirestoreSavedQuestionData = {
-    questionId,
-    savedAt: Date.now()
-  };
-  await setDoc(ref, data);
-}
-
-export async function removeSavedQuestionFromFirestore(uid: string, questionId: string): Promise<void> {
-  if (!db || !isFirebaseConfigured) return;
-  const ref = doc(db, 'users', uid, 'savedQuestions', questionId);
-  await deleteDoc(ref);
-}
-
-export async function getUserSavedQuestionsFromFirestore(uid: string): Promise<string[]> {
-  if (!db || !isFirebaseConfigured) return [];
-  try {
-    const colRef = collection(db, 'users', uid, 'savedQuestions');
-    const snapshot = await getDocs(colRef);
-    return snapshot.docs.map((docSnap) => docSnap.id);
-  } catch (err) {
-    console.warn('Failed to load saved questions from Firestore:', err);
-    return [];
+export function listenToUserMistakes(
+  uid: string,
+  onUpdate: (mistakes: Record<string, MistakeEntry>) => void,
+  onError?: (err: Error) => void
+): () => void {
+  if (!db || !isFirebaseConfigured) {
+    onUpdate({});
+    return () => {};
   }
+  const mistakesCol = collection(db, 'users', uid, 'mistakes');
+  return onSnapshot(
+    mistakesCol,
+    (snapshot) => {
+      const mistakesMap: Record<string, MistakeEntry> = {};
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data() as FirestoreMistakeData;
+        mistakesMap[docSnap.id] = {
+          questionId: docSnap.id,
+          wrongCount: data.attempts || 1,
+          lastAttempt: data.savedAt || Date.now(),
+          question: data.questionData || { id: docSnap.id, question: 'Question' }
+        };
+      });
+      onUpdate(mistakesMap);
+    },
+    (err) => {
+      console.warn('Realtime mistakes listener error:', err);
+      if (onError) onError(err);
+    }
+  );
 }
 
 // 6. AUTOMATIC CLOUD SYNC & OFFLINE QUEUE
@@ -295,23 +431,21 @@ export async function saveAttemptAutomatically(
   result: ExamResult,
   customAuraPoints?: number
 ): Promise<string> {
-  // Always ensure it's saved locally first (already performed in exam engine)
   const attemptId = result.id || `attempt_${Date.now()}`;
 
   if (!db || !isFirebaseConfigured || !navigator.onLine) {
-    // Offline or DB not initialized: stage in local pending queue
-    localStore.addPendingAttempt(result);
+    // Offline or DB not initialized: stage in user's scoped local pending queue
+    localStore.addPendingAttempt(result, uid);
     return attemptId;
   }
 
   try {
     const savedId = await saveAttemptToFirestore(uid, result, customAuraPoints);
-    // Successfully saved to Firestore: remove from pending offline queue
-    localStore.removePendingAttempt(savedId);
+    localStore.removePendingAttempt(savedId, uid);
     return savedId;
   } catch (err) {
     console.warn('Network / Firestore write deferred to offline queue:', err);
-    localStore.addPendingAttempt(result);
+    localStore.addPendingAttempt(result, uid);
     return attemptId;
   }
 }
@@ -320,19 +454,17 @@ export async function flushPendingSyncs(uid: string): Promise<void> {
   if (!db || !isFirebaseConfigured || !navigator.onLine) return;
 
   try {
-    // Flush pending attempts
-    const pendingAttempts = localStore.getPendingAttempts();
+    const pendingAttempts = localStore.getPendingAttempts(uid);
     for (const attempt of pendingAttempts) {
       try {
         await saveAttemptToFirestore(uid, attempt);
-        localStore.removePendingAttempt(attempt.id);
+        localStore.removePendingAttempt(attempt.id, uid);
       } catch (err) {
         console.warn(`Failed to flush pending attempt ${attempt.id}:`, err);
       }
     }
 
-    // Flush pending bookmarks
-    const pendingBookmarks = localStore.getPendingBookmarks();
+    const pendingBookmarks = localStore.getPendingBookmarks(uid);
     for (const b of pendingBookmarks) {
       try {
         if (b.action === 'add') {
@@ -340,7 +472,7 @@ export async function flushPendingSyncs(uid: string): Promise<void> {
         } else {
           await removeBookmarkFromFirestore(uid, b.questionId);
         }
-        localStore.removePendingBookmark(b.questionId);
+        localStore.removePendingBookmark(b.questionId, uid);
       } catch (err) {
         console.warn(`Failed to flush pending bookmark ${b.questionId}:`, err);
       }
@@ -358,7 +490,7 @@ export async function syncBookmarkAction(
   if (!uid) return;
 
   if (!db || !isFirebaseConfigured || !navigator.onLine) {
-    localStore.addPendingBookmark(questionId, isBookmarked ? 'add' : 'remove');
+    localStore.addPendingBookmark(questionId, isBookmarked ? 'add' : 'remove', uid);
     return;
   }
 
@@ -368,99 +500,38 @@ export async function syncBookmarkAction(
     } else {
       await removeBookmarkFromFirestore(uid, questionId);
     }
-    localStore.removePendingBookmark(questionId);
+    localStore.removePendingBookmark(questionId, uid);
   } catch (err) {
     console.warn('Bookmark sync deferred to offline queue:', err);
-    localStore.addPendingBookmark(questionId, isBookmarked ? 'add' : 'remove');
+    localStore.addPendingBookmark(questionId, isBookmarked ? 'add' : 'remove', uid);
   }
 }
 
-// 7. SYNC / MIGRATION: Local Storage -> Firestore
+// 7. USER CLOUD DATA SYNCHRONIZATION
 export interface MigrationSummary {
   attemptsMigrated: number;
   bookmarksMigrated: number;
   mistakesMigrated: number;
 }
 
-export async function migrateLocalDataToFirestore(uid: string): Promise<MigrationSummary> {
-  const summary: MigrationSummary = {
-    attemptsMigrated: 0,
-    bookmarksMigrated: 0,
-    mistakesMigrated: 0
-  };
-
-  if (!db || !isFirebaseConfigured) return summary;
-
+/**
+ * Backward-compatible wrapper for user data sync.
+ * Does NOT perform unsafe cross-account migrations.
+ */
+export async function syncUserData(uid: string): Promise<void> {
+  if (!db || !isFirebaseConfigured) return;
   try {
-    // 1. Migrate Local Exam History
-    const localHistory = localStore.getHistory();
-    if (localHistory.length > 0) {
-      // Fetch existing cloud attempts to prevent duplicates
-      const cloudAttempts = await getUserAttemptsFromFirestore(uid);
-      const existingTimestamps = new Set(cloudAttempts.map((a) => a.timestamp));
-      const existingIds = new Set(cloudAttempts.map((a) => a.id));
-
-      for (const attempt of localHistory) {
-        // Skip if already in Firestore
-        if (existingIds.has(attempt.id) || existingTimestamps.has(attempt.timestamp)) {
-          continue;
-        }
-        await saveAttemptToFirestore(uid, attempt);
-        summary.attemptsMigrated++;
-      }
-    }
-
-    // 2. Migrate Bookmarks
-    const localBookmarks = localStore.getBookmarks();
-    if (localBookmarks.length > 0) {
-      const cloudBookmarks = await getUserBookmarksFromFirestore(uid);
-      const cloudSet = new Set(cloudBookmarks);
-      for (const qId of localBookmarks) {
-        if (!cloudSet.has(qId)) {
-          await saveBookmarkToFirestore(uid, qId);
-          summary.bookmarksMigrated++;
-        }
-      }
-    }
-
-    // 3. Migrate Mistakes
-    const localMistakes = localStore.getMistakesList();
-    if (localMistakes.length > 0) {
-      const cloudMistakes = await getUserMistakesFromFirestore(uid);
-      for (const m of localMistakes) {
-        if (!cloudMistakes[m.questionId]) {
-          await saveMistakeToFirestore(uid, m.questionId, 'local-migrated', m.wrongCount, m.question);
-          summary.mistakesMigrated++;
-        }
-      }
-    }
-
-    // Flush any pending sync queue items as well
     await flushPendingSyncs(uid);
-
-    // Mark migration completed in local storage for this UID so we don't repeat
-    localStorage.setItem(`exam_room_migrated_${uid}`, 'true');
   } catch (err) {
-    console.error('Migration to Firestore error:', err);
+    console.warn('Error during pending sync flush:', err);
   }
-
-  return summary;
 }
 
 export async function autoSyncUserData(uid: string): Promise<MigrationSummary | null> {
-  if (hasUnmigratedLocalData(uid)) {
-    return await migrateLocalDataToFirestore(uid);
-  }
-  await flushPendingSyncs(uid);
+  await syncUserData(uid);
   return null;
 }
 
-export function hasUnmigratedLocalData(uid: string): boolean {
-  if (localStorage.getItem(`exam_room_migrated_${uid}`) === 'true') {
-    return false;
-  }
-  const history = localStore.getHistory();
-  const bookmarks = localStore.getBookmarks();
-  const mistakes = localStore.getMistakesList();
-  return history.length > 0 || bookmarks.length > 0 || mistakes.length > 0;
+export function hasUnmigratedLocalData(_uid: string): boolean {
+  return false;
 }

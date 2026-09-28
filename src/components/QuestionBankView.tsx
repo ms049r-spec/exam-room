@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { allQuestions } from '../data/questions/sampleExams';
-import { localStore } from '../storage/localStore';
-import { useAuth } from '../context/AuthContext';
-import { syncBookmarkAction } from '../lib/firestore';
+import { useUserData } from '../context/UserDataContext';
 import { Search, Bookmark } from 'lucide-react';
 
 interface QuestionBankViewProps {
@@ -10,17 +8,11 @@ interface QuestionBankViewProps {
 }
 
 export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkChange }) => {
-  const { user } = useAuth();
+  const { isBookmarked, toggleBookmark } = useUserData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
-  const [bookmarkedMap, setBookmarkedMap] = useState<Record<string, boolean>>(() => {
-    const list = localStore.getBookmarks();
-    const map: Record<string, boolean> = {};
-    list.forEach((id) => (map[id] = true));
-    return map;
-  });
 
   const subjects = ['all', ...Array.from(new Set(allQuestions.map((q) => q.subject)))];
 
@@ -37,12 +29,8 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
     return true;
   });
 
-  const handleToggleBookmark = (id: string) => {
-    const isNow = localStore.toggleBookmark(id);
-    setBookmarkedMap((prev) => ({ ...prev, [id]: isNow }));
-    if (user) {
-      syncBookmarkAction(user.uid, id, isNow).catch(() => {});
-    }
+  const handleToggleBookmark = async (id: string) => {
+    await toggleBookmark(id);
     onBookmarkChange();
   };
 
@@ -74,15 +62,15 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="bg-white rounded-lg border border-slate-200 p-3 cbt-shadow flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full">
+      <div className="liquid-glass-panel rounded-2xl border border-white/80 p-3.5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search keywords, topics, or chapters..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm font-sans border border-slate-200 rounded focus:outline-none focus:border-indigo-600"
+            className="liquid-glass-input w-full pl-10 pr-3 py-2 text-xs sm:text-sm font-sans rounded-xl"
           />
         </div>
 
@@ -90,7 +78,7 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="flex-1 sm:flex-initial px-2.5 py-1.5 border border-slate-200 rounded bg-white text-slate-800 uppercase cursor-pointer"
+            className="liquid-glass-input flex-1 sm:flex-initial px-3 py-2 rounded-xl text-slate-800 uppercase font-semibold cursor-pointer"
           >
             {subjects.map((s) => (
               <option key={s} value={s}>
@@ -102,7 +90,7 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
           <select
             value={selectedDifficulty}
             onChange={(e) => setSelectedDifficulty(e.target.value)}
-            className="flex-1 sm:flex-initial px-2.5 py-1.5 border border-slate-200 rounded bg-white text-slate-800 uppercase cursor-pointer"
+            className="liquid-glass-input flex-1 sm:flex-initial px-3 py-2 rounded-xl text-slate-800 uppercase font-semibold cursor-pointer"
           >
             <option value="all">ALL DIFFICULTIES</option>
             <option value="easy">EASY</option>
@@ -113,16 +101,16 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
       </div>
 
       {/* Questions list */}
-      <div className="space-y-3 w-full">
+      <div className="space-y-3.5 w-full">
         {filteredQuestions.map((q) => {
           const isRevealed = !!revealedIds[q.id];
-          const isBookmarked = !!bookmarkedMap[q.id];
+          const isBookmarkedQuestion = isBookmarked(q.id);
           const correctIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : -1;
 
           return (
             <div
               key={q.id}
-              className="bg-white rounded-lg border border-slate-200 p-4 sm:p-5 cbt-shadow space-y-3 w-full"
+              className="liquid-glass-panel rounded-2xl border border-white/80 p-5 sm:p-6 shadow-sm space-y-3.5 w-full"
             >
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -140,13 +128,13 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
                 <button
                   onClick={() => handleToggleBookmark(q.id)}
                   className={`flex items-center gap-1 px-2 py-0.5 rounded border transition-colors cursor-pointer shrink-0 ${
-                    isBookmarked
+                    isBookmarkedQuestion
                       ? 'border-amber-300 bg-amber-50 text-amber-900 font-bold'
                       : 'border-slate-200 text-slate-500 hover:bg-slate-100'
                   }`}
                 >
-                  <Bookmark className={`w-3 h-3 ${isBookmarked ? 'fill-amber-500 text-amber-600' : 'text-slate-400'}`} />
-                  <span>{isBookmarked ? 'SAVED' : 'SAVE'}</span>
+                  <Bookmark className={`w-3 h-3 ${isBookmarkedQuestion ? 'fill-amber-500 text-amber-600' : 'text-slate-400'}`} />
+                  <span>{isBookmarkedQuestion ? 'SAVED' : 'SAVE'}</span>
                 </button>
               </div>
 
@@ -161,18 +149,18 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
                   return (
                     <div
                       key={idx}
-                      className={`p-2.5 rounded border flex items-center justify-between gap-2 ${
+                      className={`p-3 rounded-xl border flex items-center justify-between gap-2.5 transition-colors ${
                         isCorrect
-                          ? 'border-emerald-500 bg-emerald-50/70 text-emerald-950 font-semibold'
-                          : 'border-slate-200 bg-slate-50/50 text-slate-700'
+                          ? 'border-emerald-400 bg-emerald-500/15 text-emerald-950 font-semibold shadow-xs'
+                          : 'border-white/80 bg-white/40 text-slate-800'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-slate-500">{getOptionLetter(idx)}.</span>
+                        <span className="font-mono font-bold text-slate-500 bg-black/5 w-5 h-5 rounded-md flex items-center justify-center text-[11px] shrink-0">{getOptionLetter(idx)}</span>
                         <span>{opt}</span>
                       </div>
                       {isCorrect && (
-                        <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase shrink-0">
+                        <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase shrink-0 bg-emerald-100/90 px-1.5 py-0.5 rounded-md">
                           CORRECT
                         </span>
                       )}
@@ -181,18 +169,18 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
                 })}
               </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
                 <button
                   onClick={() => toggleAnswer(q.id)}
-                  className="text-xs font-mono text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
+                  className="text-xs font-mono text-[#4A4E69] hover:text-[#22223B] font-bold cursor-pointer transition-colors"
                 >
                   {isRevealed ? 'Hide Official Solution ▲' : 'Show Official Solution ▼'}
                 </button>
               </div>
 
               {isRevealed && (
-                <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded text-xs space-y-1 mt-2">
-                  <span className="font-mono font-bold uppercase text-[10px] text-indigo-900 tracking-wider block">
+                <div className="p-3.5 bg-indigo-500/10 border border-indigo-200/70 rounded-xl text-xs space-y-1.5 mt-2 backdrop-blur-xs">
+                  <span className="font-mono font-bold uppercase text-[10px] text-[#22223B] tracking-wider block">
                     SCIENTIFIC EXPLANATION
                   </span>
                   <p className="text-slate-800 leading-relaxed font-sans">

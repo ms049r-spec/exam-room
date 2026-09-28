@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { localStore } from '../storage/localStore';
+import React from 'react';
+import { useUserData } from '../context/UserDataContext';
 import { ExamResult } from '../types/exam';
 
 interface HistoryViewProps {
@@ -11,11 +11,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   onReviewAttempt,
   onGoToExams
 }) => {
-  const [history, setHistory] = useState<ExamResult[]>([]);
-
-  useEffect(() => {
-    setHistory(localStore.getHistory());
-  }, []);
+  const { attempts: history, loading } = useUserData();
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);

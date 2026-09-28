@@ -89,17 +89,17 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150">
       <div
-        className="w-full max-w-md max-h-[92vh] flex flex-col bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden relative my-auto"
+        className="w-full max-w-md max-h-[92vh] flex flex-col liquid-glass-panel rounded-2xl border border-white/80 shadow-2xl overflow-hidden relative my-auto"
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
       >
         {/* Top Brand Bar */}
-        <div className="bg-slate-900 px-6 py-4 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div className="liquid-glass-dark px-6 py-4 text-white flex items-center justify-between border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded bg-indigo-600 flex items-center justify-center font-mono text-[10px] font-bold text-white shadow-2xs">
+            <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center font-mono text-[10px] font-bold text-white shadow-xs">
               EX
             </div>
             <div>
@@ -110,7 +110,7 @@ export const AuthModal: React.FC = () => {
           </div>
           <button
             onClick={closeAuthModal}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
@@ -198,7 +198,7 @@ export const AuthModal: React.FC = () => {
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="e.g. StudyBeast, BioNerd"
                   maxLength={24}
-                  className="w-full pl-9 pr-3 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-slate-900"
+                  className="liquid-glass-input w-full pl-9 pr-3 py-2 text-xs font-mono rounded-xl text-slate-900"
                 />
               </div>
             </div>
@@ -217,7 +217,7 @@ export const AuthModal: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="candidate@example.com"
-                className="w-full pl-9 pr-3 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-slate-900"
+                className="liquid-glass-input w-full pl-9 pr-3 py-2 text-xs font-mono rounded-xl text-slate-900"
               />
             </div>
           </div>
@@ -250,7 +250,7 @@ export const AuthModal: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-10 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-slate-900"
+                  className="liquid-glass-input w-full pl-9 pr-10 py-2 text-xs font-mono rounded-xl text-slate-900"
                 />
                 <button
                   type="button"
@@ -266,7 +266,7 @@ export const AuthModal: React.FC = () => {
 
           {/* Leaderboard Option during Signup */}
           {mode === 'signup' && (
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+            <div className="p-3 bg-white/70 border border-slate-200/80 rounded-xl space-y-2.5 shadow-2xs">
               <div className="flex items-start gap-2.5">
                 <Trophy className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
@@ -303,7 +303,7 @@ export const AuthModal: React.FC = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              className="liquid-glass-btn-primary w-full flex items-center justify-center gap-2 py-2.5 px-4 font-mono text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <span className="flex items-center gap-2">

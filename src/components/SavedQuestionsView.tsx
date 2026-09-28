@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { localStore } from '../storage/localStore';
-import { useAuth } from '../context/AuthContext';
-import { syncBookmarkAction } from '../lib/firestore';
+import React, { useState } from 'react';
+import { useUserData } from '../context/UserDataContext';
 import { Question } from '../types/exam';
 import { Bookmark, Play, Trash2 } from 'lucide-react';
 import { allQuestions } from '../data/questions/sampleExams';
@@ -15,22 +13,13 @@ export const SavedQuestionsView: React.FC<SavedQuestionsViewProps> = ({
   onStartBookmarkExam,
   onGoToExams
 }) => {
-  const { user } = useAuth();
-  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const { bookmarks, toggleBookmark } = useUserData();
   const [revealedMap, setRevealedMap] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    setBookmarks(localStore.getBookmarks());
-  }, []);
 
   const savedQuestions = allQuestions.filter((q) => bookmarks.includes(q.id));
 
-  const handleRemoveBookmark = (id: string) => {
-    localStore.toggleBookmark(id);
-    setBookmarks((prev) => prev.filter((b) => b !== id));
-    if (user) {
-      syncBookmarkAction(user.uid, id, false).catch(() => {});
-    }
+  const handleRemoveBookmark = async (id: string) => {
+    await toggleBookmark(id);
   };
 
   const handleStartPractice = () => {
@@ -67,7 +56,7 @@ export const SavedQuestionsView: React.FC<SavedQuestionsViewProps> = ({
         {savedQuestions.length > 0 && (
           <button
             onClick={handleStartPractice}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-white bg-indigo-600 hover:bg-indigo-500 rounded transition-colors self-start sm:self-auto shadow-xs cursor-pointer"
+            className="liquid-glass-btn-primary flex items-center gap-1.5 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-xl transition-all self-start sm:self-auto cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>PRACTICE BOOKMARKS ({savedQuestions.length})</span>
@@ -76,21 +65,21 @@ export const SavedQuestionsView: React.FC<SavedQuestionsViewProps> = ({
       </div>
 
       {savedQuestions.length === 0 ? (
-        <div className="bg-white rounded-lg border border-slate-200 p-6 sm:p-8 text-center max-w-md mx-auto space-y-3 cbt-shadow">
-          <Bookmark className="w-8 h-8 text-amber-500 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900">No Bookmarked Questions</h3>
-          <p className="text-xs text-slate-500 font-sans">
+        <div className="liquid-glass-panel rounded-2xl border border-white/80 p-8 sm:p-12 text-center max-w-md mx-auto space-y-3.5 shadow-sm">
+          <Bookmark className="w-10 h-10 text-amber-500 mx-auto" />
+          <h3 className="text-base sm:text-lg font-bold text-slate-900">No Bookmarked Questions</h3>
+          <p className="text-xs text-slate-500 font-sans leading-relaxed">
             Bookmark tricky questions while taking an exam or reviewing results to practice them here in isolation.
           </p>
           <button
             onClick={onGoToExams}
-            className="px-4 py-2 text-xs font-mono font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-xs cursor-pointer"
+            className="liquid-glass-btn-primary px-5 py-2.5 text-xs font-mono font-bold rounded-xl cursor-pointer"
           >
             BROWSE EXAMS
           </button>
         </div>
       ) : (
-        <div className="space-y-3 w-full">
+        <div className="space-y-3.5 w-full">
           {savedQuestions.map((q) => {
             const isRevealed = !!revealedMap[q.id];
             const correctIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : -1;
@@ -98,7 +87,7 @@ export const SavedQuestionsView: React.FC<SavedQuestionsViewProps> = ({
             return (
               <div
                 key={q.id}
-                className="bg-white rounded-lg border border-slate-200 p-4 sm:p-5 cbt-shadow space-y-3 w-full"
+                className="liquid-glass-panel rounded-2xl border border-white/80 p-5 sm:p-6 shadow-sm space-y-3.5 w-full"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">

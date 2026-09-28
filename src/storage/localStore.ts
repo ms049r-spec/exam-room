@@ -1,112 +1,225 @@
 import { ExamResult, ActiveExamSession, MistakeEntry, Question } from '../types/exam';
 
-const STORAGE_KEYS = {
-  HISTORY: 'exam_room_history_v1',
-  BOOKMARKS: 'exam_room_bookmarks_v1',
-  MISTAKES: 'exam_room_mistakes_v1',
-  ACTIVE_SESSION: 'exam_room_active_session_v1',
-  CUSTOM_EXAMS: 'exam_room_custom_exams_v1',
-  PENDING_SYNC_ATTEMPTS: 'exam_room_pending_attempts_v1',
-  PENDING_SYNC_BOOKMARKS: 'exam_room_pending_bookmarks_v1'
-};
+// Active user ID for namespacing (null = anonymous session)
+let currentUserId: string | null = null;
+const listeners = new Set<() => void>();
+
+function resolveUid(overrideUid?: string | null): string | null {
+  return overrideUid !== undefined ? overrideUid : currentUserId;
+}
+
+function getScopedKey(subKey: string, uid: string | null): string {
+  if (uid) {
+    return `exam_room_user_${uid}_${subKey}`;
+  }
+  return `exam_room_anon_${subKey}`;
+}
+
+function readStorage(subKey: string, overrideUid?: string | null): string | null {
+  const uid = resolveUid(overrideUid);
+  if (uid) {
+    // Authenticated user: STRICTLY isolated, only read their own key!
+    return localStorage.getItem(`exam_room_user_${uid}_${subKey}`);
+  }
+
+  // Anonymous user: check anon key first
+  const anonKey = `exam_room_anon_${subKey}`;
+  const data = localStorage.getItem(anonKey);
+  if (data !== null) return data;
+
+  // Fallback map for anonymous legacy data to preserve pre-existing anonymous attempts
+  const legacyMap: Record<string, string> = {
+    history: 'exam_room_history_v1',
+    bookmarks: 'exam_room_bookmarks_v1',
+    mistakes: 'exam_room_mistakes_v1',
+    active_session: 'exam_room_active_session_v1',
+    custom_exams: 'exam_room_custom_exams_v1',
+    pending_attempts: 'exam_room_pending_attempts_v1',
+    pending_bookmarks: 'exam_room_pending_bookmarks_v1'
+  };
+  const legacyKey = legacyMap[subKey];
+  return legacyKey ? localStorage.getItem(legacyKey) : null;
+}
+
+function writeStorage(subKey: string, value: string, overrideUid?: string | null): void {
+  const uid = resolveUid(overrideUid);
+  const key = getScopedKey(subKey, uid);
+  localStorage.setItem(key, value);
+}
+
+function removeStorage(subKey: string, overrideUid?: string | null): void {
+  const uid = resolveUid(overrideUid);
+  const key = getScopedKey(subKey, uid);
+  localStorage.removeItem(key);
+}
 
 export const localStore = {
+  /**
+   * Sets the active user namespace.
+   * Passing a UID scopes all storage reads/writes to that specific authenticated account.
+   * Passing null sets the store to the anonymous/local device namespace.
+   */
+  setUser(uid: string | null): void {
+    if (currentUserId !== uid) {
+      currentUserId = uid;
+      this.notify();
+    }
+  },
+
+  getCurrentUserId(): string | null {
+    return currentUserId;
+  },
+
+  /**
+   * Subscribe to storage / active namespace changes across the app.
+   */
+  subscribe(listener: () => void): () => void {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  },
+
+  notify(): void {
+    listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (err) {
+        console.error('Error in localStore subscriber:', err);
+      }
+    });
+  },
+
   // Offline Sync Queue
-  getPendingAttempts(): ExamResult[] {
+  getPendingAttempts(uid?: string | null): ExamResult[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PENDING_SYNC_ATTEMPTS);
+      const data = readStorage('pending_attempts', uid);
       return data ? JSON.parse(data) : [];
     } catch {
       return [];
     }
   },
 
-  addPendingAttempt(result: ExamResult): void {
+  addPendingAttempt(result: ExamResult, uid?: string | null): void {
     try {
-      const current = this.getPendingAttempts();
+      const current = this.getPendingAttempts(uid);
       if (!current.some((a) => a.id === result.id)) {
-        localStorage.setItem(
-          STORAGE_KEYS.PENDING_SYNC_ATTEMPTS,
-          JSON.stringify([...current, result])
-        );
+        writeStorage('pending_attempts', JSON.stringify([...current, result]), uid);
       }
     } catch (err) {
       console.error('Failed to add pending attempt to offline queue', err);
     }
   },
 
-  removePendingAttempt(attemptId: string): void {
+  removePendingAttempt(attemptId: string, uid?: string | null): void {
     try {
-      const current = this.getPendingAttempts();
+      const current = this.getPendingAttempts(uid);
       const filtered = current.filter((a) => a.id !== attemptId);
-      localStorage.setItem(STORAGE_KEYS.PENDING_SYNC_ATTEMPTS, JSON.stringify(filtered));
+      writeStorage('pending_attempts', JSON.stringify(filtered), uid);
     } catch (err) {
       console.error('Failed to remove pending attempt', err);
     }
   },
 
-  getPendingBookmarks(): { questionId: string; action: 'add' | 'remove' }[] {
+  clearPendingAttempts(uid?: string | null): void {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PENDING_SYNC_BOOKMARKS);
+      removeStorage('pending_attempts', uid);
+    } catch (err) {
+      console.error('Failed to clear pending attempts', err);
+    }
+  },
+
+  getPendingBookmarks(uid?: string | null): { questionId: string; action: 'add' | 'remove' }[] {
+    try {
+      const data = readStorage('pending_bookmarks', uid);
       return data ? JSON.parse(data) : [];
     } catch {
       return [];
     }
   },
 
-  addPendingBookmark(questionId: string, action: 'add' | 'remove'): void {
+  addPendingBookmark(questionId: string, action: 'add' | 'remove', uid?: string | null): void {
     try {
-      const current = this.getPendingBookmarks().filter((b) => b.questionId !== questionId);
-      localStorage.setItem(
-        STORAGE_KEYS.PENDING_SYNC_BOOKMARKS,
-        JSON.stringify([...current, { questionId, action }])
+      const current = this.getPendingBookmarks(uid).filter((b) => b.questionId !== questionId);
+      writeStorage(
+        'pending_bookmarks',
+        JSON.stringify([...current, { questionId, action }]),
+        uid
       );
     } catch (err) {
       console.error('Failed to add pending bookmark', err);
     }
   },
 
-  removePendingBookmark(questionId: string): void {
+  removePendingBookmark(questionId: string, uid?: string | null): void {
     try {
-      const current = this.getPendingBookmarks().filter((b) => b.questionId !== questionId);
-      localStorage.setItem(STORAGE_KEYS.PENDING_SYNC_BOOKMARKS, JSON.stringify(current));
+      const current = this.getPendingBookmarks(uid).filter((b) => b.questionId !== questionId);
+      writeStorage('pending_bookmarks', JSON.stringify(current), uid);
     } catch (err) {
       console.error('Failed to remove pending bookmark', err);
     }
   },
 
-  // Exam History
-  getHistory(): ExamResult[] {
+  clearPendingBookmarks(uid?: string | null): void {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.HISTORY);
+      removeStorage('pending_bookmarks', uid);
+    } catch (err) {
+      console.error('Failed to clear pending bookmarks', err);
+    }
+  },
+
+  // Exam History
+  getHistory(uid?: string | null): ExamResult[] {
+    try {
+      const data = readStorage('history', uid);
       return data ? JSON.parse(data) : [];
     } catch {
       return [];
     }
   },
 
-  saveResult(result: ExamResult): void {
+  setHistory(history: ExamResult[], uid?: string | null): void {
     try {
-      const history = this.getHistory();
-      const updated = [result, ...history].slice(0, 100); // keep last 100
-      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
+      writeStorage('history', JSON.stringify(history.slice(0, 100)), uid);
+      this.notify();
+    } catch (err) {
+      console.error('Failed to set history in localStore', err);
+    }
+  },
 
-      // Also update mistakes pool
-      this.recordMistakes(result);
+  saveResult(result: ExamResult, uid?: string | null): void {
+    try {
+      const history = this.getHistory(uid);
+      const filtered = history.filter((h) => h.id !== result.id);
+      const updated = [result, ...filtered].slice(0, 100); // keep last 100
+      writeStorage('history', JSON.stringify(updated), uid);
+
+      // Also update mistakes pool for this user
+      this.recordMistakes(result, uid);
+      this.notify();
     } catch (err) {
       console.error('Failed to save exam result locally', err);
     }
   },
 
-  // Active Session (Accidental refresh protection)
-  getActiveSession(): ActiveExamSession | null {
+  clearHistory(uid?: string | null): void {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+      removeStorage('history', uid);
+      this.notify();
+    } catch (err) {
+      console.error('Failed to clear history', err);
+    }
+  },
+
+  // Active Session (Accidental refresh protection)
+  getActiveSession(uid?: string | null): ActiveExamSession | null {
+    try {
+      const data = readStorage('active_session', uid);
       if (!data) return null;
       const session: ActiveExamSession = JSON.parse(data);
       // If timed and target end time already expired significantly (> 1 hr), clear it
       if (session.targetEndTime && Date.now() > session.targetEndTime + 3600000) {
-        this.clearActiveSession();
+        this.clearActiveSession(uid);
         return null;
       }
       return session;
@@ -115,74 +228,95 @@ export const localStore = {
     }
   },
 
-  saveActiveSession(session: ActiveExamSession): void {
+  saveActiveSession(session: ActiveExamSession, uid?: string | null): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(session));
+      writeStorage('active_session', JSON.stringify(session), uid);
+      this.notify();
     } catch (err) {
       console.error('Failed to persist active session', err);
     }
   },
 
-  clearActiveSession(): void {
+  clearActiveSession(uid?: string | null): void {
     try {
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+      removeStorage('active_session', uid);
+      this.notify();
     } catch (err) {
       console.error('Failed to clear active session', err);
     }
   },
 
   // Bookmarks
-  getBookmarks(): string[] {
+  getBookmarks(uid?: string | null): string[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+      const data = readStorage('bookmarks', uid);
       return data ? JSON.parse(data) : [];
     } catch {
       return [];
     }
   },
 
-  toggleBookmark(questionId: string): boolean {
+  setBookmarks(bookmarks: string[], uid?: string | null): void {
     try {
-      const bookmarks = this.getBookmarks();
+      writeStorage('bookmarks', JSON.stringify(bookmarks), uid);
+      this.notify();
+    } catch (err) {
+      console.error('Failed to set bookmarks in localStore', err);
+    }
+  },
+
+  toggleBookmark(questionId: string, uid?: string | null): boolean {
+    try {
+      const bookmarks = this.getBookmarks(uid);
       const exists = bookmarks.includes(questionId);
       const updated = exists
         ? bookmarks.filter((id) => id !== questionId)
         : [...bookmarks, questionId];
-      localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(updated));
+      writeStorage('bookmarks', JSON.stringify(updated), uid);
+      this.notify();
       return !exists;
     } catch {
       return false;
     }
   },
 
-  isBookmarked(questionId: string): boolean {
-    return this.getBookmarks().includes(questionId);
+  isBookmarked(questionId: string, uid?: string | null): boolean {
+    return this.getBookmarks(uid).includes(questionId);
   },
 
   // Mistakes Pool
-  getMistakes(): Record<string, MistakeEntry> {
+  getMistakes(uid?: string | null): Record<string, MistakeEntry> {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.MISTAKES);
+      const data = readStorage('mistakes', uid);
       return data ? JSON.parse(data) : {};
     } catch {
       return {};
     }
   },
 
-  getMistakesList(): MistakeEntry[] {
-    return Object.values(this.getMistakes());
+  setMistakes(mistakes: Record<string, MistakeEntry>, uid?: string | null): void {
+    try {
+      writeStorage('mistakes', JSON.stringify(mistakes), uid);
+      this.notify();
+    } catch (err) {
+      console.error('Failed to set mistakes in localStore', err);
+    }
   },
 
-  getExamBestScore(examId: string): number | null {
-    const history = this.getHistory().filter((h) => h.examId === examId);
+  getMistakesList(uid?: string | null): MistakeEntry[] {
+    return Object.values(this.getMistakes(uid));
+  },
+
+  getExamBestScore(examId: string, uid?: string | null): number | null {
+    const history = this.getHistory(uid).filter((h) => h.examId === examId);
     if (history.length === 0) return null;
     return Math.round(Math.max(...history.map((h) => h.percentage)) * 10) / 10;
   },
 
-  recordMistakes(result: ExamResult): void {
+  recordMistakes(result: ExamResult, uid?: string | null): void {
     try {
-      const mistakes = this.getMistakes();
-      const incorrectSet = new Set(result.incorrectQuestionIds);
+      const mistakes = this.getMistakes(uid);
+      const incorrectSet = new Set(result.incorrectQuestionIds || []);
 
       // For every incorrect question, record or increment
       result.questions.forEach((q) => {
@@ -194,7 +328,7 @@ export const localStore = {
             lastAttempt: Date.now(),
             question: q
           };
-        } else if (result.answers[q.id] !== undefined) {
+        } else if (result.answers && result.answers[q.id] !== undefined) {
           // If the user answered it correctly in this attempt, decrement wrong count or clear if mastered
           if (mistakes[q.id]) {
             mistakes[q.id].wrongCount = Math.max(0, mistakes[q.id].wrongCount - 1);
@@ -205,23 +339,25 @@ export const localStore = {
         }
       });
 
-      localStorage.setItem(STORAGE_KEYS.MISTAKES, JSON.stringify(mistakes));
+      writeStorage('mistakes', JSON.stringify(mistakes), uid);
+      this.notify();
     } catch (err) {
       console.error('Failed to update mistakes store', err);
     }
   },
 
-  clearMistakes(): void {
+  clearMistakes(uid?: string | null): void {
     try {
-      localStorage.removeItem(STORAGE_KEYS.MISTAKES);
+      removeStorage('mistakes', uid);
+      this.notify();
     } catch (err) {
       console.error('Failed to clear mistakes', err);
     }
   },
 
   // Analytics Computation
-  getAnalytics() {
-    const history = this.getHistory();
+  getAnalytics(uid?: string | null) {
+    const history = this.getHistory(uid);
     if (history.length === 0) {
       return {
         totalAttempts: 0,
