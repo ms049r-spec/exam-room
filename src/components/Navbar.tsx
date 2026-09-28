@@ -21,7 +21,7 @@ interface NavbarProps {
   onStartDailyPractice?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
+export const Navbar: React.FC<NavbarProps> = React.memo(({
   currentView,
   onNavigate,
   bookmarksCount,
@@ -46,7 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-2 sm:top-3 z-40 w-full max-w-7xl mx-auto px-2.5 sm:px-6">
+    <header className="sticky top-2 sm:top-3 z-40 w-full max-w-7xl mx-auto px-2.5 sm:px-6 transform-gpu">
       <div className="w-full rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 shadow-[0_12px_36px_-6px_rgba(0,0,0,0.35),inset_0_1px_1px_0_rgba(255,255,255,0.12)] text-white px-3 sm:px-5 transition-all">
         <div className="flex items-center justify-between h-14 gap-1.5 sm:gap-2 min-w-0">
           {/* Brand Mark: Distinctive Testing Platform Identity */}
@@ -266,4 +266,4 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
     </header>
   );
-};
+});

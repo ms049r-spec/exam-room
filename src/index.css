@@ -201,3 +201,39 @@
     transform: none !important;
   }
 }
+
+/* Mobile & Android GPU Compositing & Scroll Optimization */
+@media (max-width: 768px) {
+  /* Prevent full-viewport repaint on touch scrolling */
+  .liquid-glass-ambient {
+    background-attachment: scroll;
+  }
+
+  /* Optimized blur radii matching mobile high-DPI display density without GPU fillrate choke */
+  .liquid-glass-panel {
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    box-shadow: 0 8px 24px -6px rgba(34, 34, 59, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .liquid-glass-card {
+    backdrop-filter: blur(8px) saturate(150%);
+    -webkit-backdrop-filter: blur(8px) saturate(150%);
+    box-shadow: 0 4px 14px -2px rgba(34, 34, 59, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .liquid-glass-dark {
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: 0 10px 28px -6px rgba(15, 15, 30, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  /* Eliminate nested backdrop-filter pass on small controls where opacity is already >= 80% */
+  .liquid-glass-btn-primary,
+  .liquid-glass-btn-secondary,
+  .liquid-glass-btn-accent,
+  .liquid-glass-input {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

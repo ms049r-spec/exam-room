@@ -216,6 +216,10 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({
                     src={currentMeme.image}
                     alt={currentMeme.title}
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
+                    width={224}
+                    height={192}
                     className="w-full h-full object-cover"
                   />
                 )}

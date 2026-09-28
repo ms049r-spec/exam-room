@@ -22,7 +22,7 @@ interface LeaderboardViewProps {
   exams?: ExamDefinition[];
 }
 
-export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
+export const LeaderboardView: React.FC<LeaderboardViewProps> = React.memo(({
   onGoToAccount,
   onGoToExams,
   exams
@@ -512,4 +512,4 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
       </div>
     </div>
   );
-};
+});

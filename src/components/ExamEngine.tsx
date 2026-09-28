@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ActiveExamSession, ExamResult, Question } from '../types/exam';
 import { QuestionRenderer } from './QuestionRenderer';
 import { QuestionPalette } from './QuestionPalette';
@@ -73,52 +73,53 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
 
   const currentQuestion: Question | undefined = session.questions[currentIndex];
 
-  const handleSelectAnswer = (ans: number | number[]) => {
+  const handleSelectAnswer = useCallback((ans: number | number[]) => {
     if (!currentQuestion) return;
     setAnswers((prev) => ({
       ...prev,
       [currentQuestion.id]: ans
     }));
-  };
+  }, [currentQuestion]);
 
-  const handleClearResponse = () => {
+  const handleClearResponse = useCallback(() => {
     if (!currentQuestion) return;
     setAnswers((prev) => {
       const copy = { ...prev };
       delete copy[currentQuestion.id];
       return copy;
     });
-  };
+  }, [currentQuestion]);
 
-  const handleToggleMarkForReview = () => {
+  const handleToggleMarkForReview = useCallback(() => {
     if (!currentQuestion) return;
     setMarkedForReview((prev) => ({
       ...prev,
       [currentQuestion.id]: !prev[currentQuestion.id]
     }));
-  };
+  }, [currentQuestion]);
 
-  const handleToggleBookmark = async (questionId: string) => {
-    await toggleBookmark(questionId);
-  };
+  const handleToggleCurrentBookmark = useCallback(async () => {
+    if (!currentQuestion) return;
+    await toggleBookmark(currentQuestion.id);
+  }, [currentQuestion, toggleBookmark]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentIndex < session.questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     }
-  };
+  }, [currentIndex, session.questions.length]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
     }
-  };
+  }, [currentIndex]);
 
-  const handleSelectQuestion = (index: number) => {
+  const handleSelectQuestion = useCallback((index: number) => {
     setCurrentIndex(index);
-  };
+  }, []);
 
-  const handleSubmitExam = () => {
+  const handleSubmitExam = useCallback(() => {
     localStore.clearActiveSession();
     const currentSessionState: ActiveExamSession = {
       ...session,
@@ -127,7 +128,11 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
     };
     const result = calculateExamResult(currentSessionState, Date.now());
     onFinishExam(result);
-  };
+  }, [session, answers, markedForReview, onFinishExam]);
+
+  const handleOpenSubmitModal = useCallback(() => {
+    setShowSubmitModal(true);
+  }, []);
 
   const formatTime = (totalSecs: number) => {
     const minutes = Math.floor(totalSecs / 60);
@@ -156,7 +161,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
   return (
     <div className="min-h-screen liquid-glass-ambient text-slate-900 flex flex-col font-sans w-full">
       {/* 1. BAND ONE: LIQUID GLASS HEADER */}
-      <header className="liquid-glass-dark text-white px-2.5 sm:px-6 py-2.5 sm:py-3 sticky top-0 z-30 w-full border-b border-white/10 shadow-lg">
+      <header className="liquid-glass-dark text-white px-2.5 sm:px-6 py-2.5 sm:py-3 sticky top-0 z-30 w-full border-b border-white/10 shadow-lg transform-gpu">
         <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 font-mono text-xs w-full min-w-0">
           {/* Logo & Paper Details */}
           <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
@@ -193,7 +198,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
 
             {/* Submit */}
             <button
-              onClick={() => setShowSubmitModal(true)}
+              onClick={handleOpenSubmitModal}
               className="liquid-glass-btn-primary px-3 sm:px-4 py-1 sm:py-1.5 font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer shadow-2xs"
             >
               SUBMIT
@@ -223,7 +228,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
                 userAnswer={answers[currentQuestion.id]}
                 onSelectAnswer={handleSelectAnswer}
                 isBookmarked={isBookmarked(currentQuestion.id)}
-                onToggleBookmark={() => handleToggleBookmark(currentQuestion.id)}
+                onToggleBookmark={handleToggleCurrentBookmark}
               />
             )}
 
@@ -284,7 +289,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
               answers={answers}
               markedForReview={markedForReview}
               onSelectQuestion={handleSelectQuestion}
-              onSubmitClick={() => setShowSubmitModal(true)}
+              onSubmitClick={handleOpenSubmitModal}
             />
           </div>
         </div>
@@ -297,7 +302,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
             answers={answers}
             markedForReview={markedForReview}
             onSelectQuestion={handleSelectQuestion}
-            onSubmitClick={() => setShowSubmitModal(true)}
+            onSubmitClick={handleOpenSubmitModal}
           />
         </div>
       </main>

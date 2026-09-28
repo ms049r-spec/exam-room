@@ -12,7 +12,7 @@ interface QuestionRendererProps {
   onToggleBookmark: () => void;
 }
 
-export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
+export const QuestionRenderer: React.FC<QuestionRendererProps> = React.memo(({
   question,
   questionNumber,
   totalQuestions,
@@ -200,4 +200,4 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
       </div>
     </div>
   );
-};
+});

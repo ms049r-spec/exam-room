@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ExamDefinition,
   ExamConfig,
@@ -270,7 +270,7 @@ export default function App() {
   };
 
   // Daily practice quick launcher
-  const handleStartDailyPractice = () => {
+  const handleStartDailyPractice = useCallback(() => {
     const shuffled = shuffleArray(allQuestions);
     const questions = shuffled.slice(0, 10);
 
@@ -289,10 +289,10 @@ export default function App() {
     };
 
     setSelectedExamForConfig(dailyExam);
-  };
+  }, []);
 
   // Quick launch for high-yield topic drills
-  const handleStartTopicDrill = (topicName: string) => {
+  const handleStartTopicDrill = useCallback((topicName: string) => {
     const topicQuestions = excretorySystemQuestions.filter((q) => q.chapter === topicName);
     const questions = topicQuestions.length > 0 ? topicQuestions : excretorySystemQuestions.slice(0, 5);
 
@@ -311,10 +311,10 @@ export default function App() {
     };
 
     setSelectedExamForConfig(topicExam);
-  };
+  }, []);
 
   // Top navigation dispatcher
-  const handleNavigate = (view: string) => {
+  const handleNavigate = useCallback((view: string) => {
     if (view === 'start-daily-practice') {
       handleStartDailyPractice();
       return;
@@ -325,7 +325,7 @@ export default function App() {
       return;
     }
     setCurrentView(view);
-  };
+  }, [handleStartDailyPractice, handleStartTopicDrill]);
 
   return (
     <div className="min-h-screen liquid-glass-ambient flex flex-col antialiased selection:bg-[#22223B] selection:text-[#F2E9E4]">

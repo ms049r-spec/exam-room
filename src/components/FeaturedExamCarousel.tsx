@@ -7,7 +7,7 @@ interface FeaturedExamCarouselProps {
   onSelectExam: (exam: ExamDefinition) => void;
 }
 
-export const FeaturedExamCarousel: React.FC<FeaturedExamCarouselProps> = ({
+export const FeaturedExamCarousel: React.FC<FeaturedExamCarouselProps> = React.memo(({
   exams,
   onSelectExam
 }) => {
@@ -76,11 +76,11 @@ export const FeaturedExamCarousel: React.FC<FeaturedExamCarouselProps> = ({
         }
       }}
       tabIndex={0}
-      className="bg-[#22223B] text-[#F2E9E4] border border-[#C9ADA7]/40 ring-1 ring-[#22223B] shadow-md rounded-2xl p-4 sm:p-7 relative overflow-hidden isolate focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9ADA7] transition-all duration-300 w-full max-w-full min-w-0"
+      className="bg-[#22223B] text-[#F2E9E4] border border-[#C9ADA7]/40 ring-1 ring-[#22223B] shadow-md rounded-2xl p-4 sm:p-7 relative overflow-hidden isolate focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9ADA7] transition-all duration-300 w-full max-w-full min-w-0 transform-gpu"
     >
       {/* Ambient optical refraction fields in Space Indigo / Dusty Grape / Almond Silk */}
-      <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-[#4A4E69]/30 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-[#C9ADA7]/15 blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-[#4A4E69]/25 blur-2xl pointer-events-none transform-gpu" />
+      <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-[#C9ADA7]/12 blur-2xl pointer-events-none transform-gpu" />
 
       <div className="flex flex-col gap-4 sm:gap-5 relative z-10 w-full min-w-0">
         {/* Top Bar: Badges on the left, Carousel Controls on the right */}
@@ -188,4 +188,4 @@ export const FeaturedExamCarousel: React.FC<FeaturedExamCarouselProps> = ({
       </div>
     </div>
   );
-};
+});

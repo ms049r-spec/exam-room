@@ -11,7 +11,7 @@ interface QuestionPaletteProps {
   onSubmitClick: () => void;
 }
 
-export const QuestionPalette: React.FC<QuestionPaletteProps> = ({
+export const QuestionPalette: React.FC<QuestionPaletteProps> = React.memo(({
   questions,
   currentIndex,
   answers,
@@ -129,4 +129,4 @@ export const QuestionPalette: React.FC<QuestionPaletteProps> = ({
       </div>
     </div>
   );
-};
+});
