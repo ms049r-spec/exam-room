@@ -535,3 +535,5 @@ export async function autoSyncUserData(uid: string): Promise<MigrationSummary | 
 export function hasUnmigratedLocalData(_uid: string): boolean {
   return false;
 }
+
+

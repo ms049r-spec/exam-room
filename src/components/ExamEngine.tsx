@@ -219,7 +219,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({
       <main className="max-w-7xl mx-auto w-full px-2.5 sm:px-6 py-4 sm:py-8 flex-1 flex flex-col min-w-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start flex-1 w-full">
           {/* Main Question Stage (8 cols) */}
-          <div className="lg:col-span-8 space-y-6 w-full">
+          <div className="lg:col-span-8 space-y-6 w-full min-w-0">
             {currentQuestion && (
               <QuestionRenderer
                 question={currentQuestion}

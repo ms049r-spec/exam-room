@@ -440,7 +440,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({
 
                   {/* Question */}
                   <p className="text-sm sm:text-base font-semibold text-slate-950 leading-relaxed">
-                    {q.question}
+                    {formatMathText(q.question)}
                   </p>
 
                   {/* Options */}

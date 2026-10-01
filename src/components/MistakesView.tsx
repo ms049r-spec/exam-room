@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useUserData } from '../context/UserDataContext';
 import { MistakeEntry, Question } from '../types/exam';
 import { Play, CheckCircle2, Trash2 } from 'lucide-react';
+import { formatMathText } from '../utils/mathRenderer';
 
 interface MistakesViewProps {
   onStartMistakeExam: (questions: Question[]) => void;
@@ -145,8 +146,8 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
                     </span>
                   </div>
 
-                  <p className="text-sm font-semibold text-slate-950 leading-relaxed">
-                    {q.question}
+                  <p className="text-sm font-semibold text-slate-950 leading-relaxed whitespace-pre-line">
+                    {formatMathText(q.question)}
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
@@ -163,7 +164,7 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
                         >
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-slate-500">{getOptionLetter(idx)}.</span>
-                            <span>{opt}</span>
+                            <span>{formatMathText(opt)}</span>
                           </div>
                           {isCorrect && (
                             <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase shrink-0">
@@ -189,8 +190,8 @@ export const MistakesView: React.FC<MistakesViewProps> = ({
                       <span className="font-mono font-bold uppercase text-[10px] text-indigo-900 tracking-wider block">
                         SCIENTIFIC EXPLANATION
                       </span>
-                      <p className="text-slate-800 leading-relaxed font-sans">
-                        {q.explanation}
+                      <p className="text-slate-800 leading-relaxed font-sans whitespace-pre-line">
+                        {formatMathText(q.explanation)}
                       </p>
                     </div>
                   )}

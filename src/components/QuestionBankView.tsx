@@ -157,7 +157,7 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({ onBookmarkCh
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-slate-500 bg-black/5 w-5 h-5 rounded-md flex items-center justify-center text-[11px] shrink-0">{getOptionLetter(idx)}</span>
-                        <span>{opt}</span>
+                        <span>{formatMathText(opt)}</span>
                       </div>
                       {isCorrect && (
                         <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase shrink-0 bg-emerald-100/90 px-1.5 py-0.5 rounded-md">

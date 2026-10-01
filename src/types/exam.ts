@@ -50,6 +50,8 @@ export interface ExamDefinition {
     unattempted: number;
   };
   tag?: string;
+  category?: string;
+  type?: string;
   questions: Question[];
   published?: boolean;
   featured?: boolean;

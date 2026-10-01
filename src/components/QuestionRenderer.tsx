@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMathText } from '../utils/mathRenderer';
 import { Question } from '../types/exam';
 import { Bookmark, Check, Shield } from 'lucide-react';
 
@@ -82,7 +83,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = React.memo(({
       {/* Prominent Question Statement */}
       <div className="space-y-4">
         <h2 className="text-lg sm:text-xl font-bold text-[#22223B] leading-relaxed tracking-tight">
-          {question.question}
+          {formatMathText(question.question)}
         </h2>
 
         {/* Statements Variant */}
@@ -106,13 +107,13 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = React.memo(({
               <span className="text-xs font-mono font-bold text-[#4A4E69] block mb-1">
                 ASSERTION (A):
               </span>
-              <p className="text-[#22223B] font-medium leading-relaxed">{question.assertion}</p>
+              <p className="text-[#22223B] font-medium leading-relaxed">{formatMathText(question.assertion)}</p>
             </div>
             <div className="p-3.5 bg-white/70 rounded-xl border border-[#9A8C98]/30 shadow-2xs">
               <span className="text-xs font-mono font-bold text-[#4A4E69] block mb-1">
                 REASON (R):
               </span>
-              <p className="text-[#22223B] font-medium leading-relaxed">{question.reason}</p>
+              <p className="text-[#22223B] font-medium leading-relaxed">{formatMathText(question.reason)}</p>
             </div>
           </div>
         )}
@@ -127,7 +128,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = React.memo(({
               {question.columnA.map((item) => (
                 <div key={item.key} className="flex gap-2 text-xs font-mono">
                   <span className="font-bold text-[#22223B] w-4">{item.key}.</span>
-                  <span className="text-[#22223B]">{item.text}</span>
+                  <span className="text-[#22223B]">{formatMathText(item.text)}</span>
                 </div>
               ))}
             </div>
@@ -138,7 +139,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = React.memo(({
               {question.columnB.map((item) => (
                 <div key={item.key} className="flex gap-2 text-xs font-mono">
                   <span className="font-bold text-[#22223B] w-4">{item.key}.</span>
-                  <span className="text-[#22223B]">{item.text}</span>
+                  <span className="text-[#22223B]">{formatMathText(item.text)}</span>
                 </div>
               ))}
             </div>
@@ -179,7 +180,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = React.memo(({
                   selected ? 'font-bold text-[#22223B]' : 'font-medium text-[#22223B]'
                 }`}
               >
-                {opt}
+                {formatMathText(opt)}
               </span>
 
               {/* Selection Check Circle */}

@@ -91,7 +91,7 @@ export default function App() {
         const chapterMatch = (exam.chapter || '').toLowerCase().includes(term);
         const descMatch = (exam.description || '').toLowerCase().includes(term);
         const tagMatch = (exam.tag || '').toLowerCase().includes(term);
-        return titleMatch || subjectMatch || chapterMatch || descMatch || tagMatch;
+        const catMatch = (exam.category || '').toLowerCase().includes(term);`r`n        const typeMatch = (exam.type || '').toLowerCase().includes(term);`r`n        return titleMatch || subjectMatch || chapterMatch || descMatch || tagMatch || catMatch || typeMatch;
       });
       if (exams.length > 0) {
         result[subj] = exams;

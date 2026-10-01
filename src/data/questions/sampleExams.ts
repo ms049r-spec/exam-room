@@ -1,6 +1,7 @@
 import { Question, ExamDefinition } from '../../types/exam';
 import { excretorySystemQuestions } from './excretorySystem';
 import { anatomyOfFloweringPlantsQuestions } from './anatomyOfFloweringPlants';
+import { chemicalEquilibriumQuestions } from './chemicalEquilibrium';
 
 export const cellBiologyQuestions: Question[] = [
   {
@@ -297,6 +298,7 @@ export const chemistryBondingQuestions: Question[] = [
 ];
 
 export const allQuestions: Question[] = [
+  ...chemicalEquilibriumQuestions,
   ...excretorySystemQuestions,
   ...anatomyOfFloweringPlantsQuestions,
   ...cellBiologyQuestions,
@@ -305,6 +307,24 @@ export const allQuestions: Question[] = [
 ];
 
 export const examDefinitions: ExamDefinition[] = [
+  {
+    id: 'exam-chemical-equilibrium-45',
+    title: 'Chemical Equilibrium',
+    subject: 'Chemistry',
+    chapter: 'Chemical Equilibrium',
+    category: 'Concept Drill',
+    type: 'Concept Drill',
+    description: 'Comprehensive 45-question concept drill on Chemical Equilibrium covering law of mass action, equilibrium constants (Kc, Kp, Kx), reaction quotient Q, Le Chatelier principle, degree of dissociation, vapor density, and thermodynamics.',
+    questionCount: 45,
+    difficulty: 'Hard',
+    defaultDurationMinutes: 45,
+    markingScheme: { correct: 4, incorrect: -1, unattempted: 0 },
+    tag: 'Concept Drill',
+    featured: true,
+    createdAt: '2026-01-03T10:00:00.000Z',
+    updatedAt: '2026-01-03T10:00:00.000Z',
+    questions: chemicalEquilibriumQuestions
+  },
   {
     id: 'exam-excretory-34',
     title: 'Excretory Products and Their Elimination',
